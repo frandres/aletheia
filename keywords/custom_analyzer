@@ -1,0 +1,28 @@
+def f_word_ngrams(self,doc):
+
+    print self
+    stop_words = self.get_stop_words()
+    tokenize = self.build_tokenizer()
+    tokens = tokenize(preprocess(self.decode(doc)))
+
+    """Turn tokens into a sequence of n-grams such that the first and last word is not a stopword"""
+    # handle stop words
+    original_tokens = tokens
+
+    if stop_words is not None:
+        tokens = [w for w in tokens if w not in stop_words]
+
+    # handle token n-grams
+    min_n, max_n = self.ngram_range
+    if max_n != 1:
+        tokens = []
+        n_original_tokens = len(original_tokens)
+        for n in xrange(min_n,
+                        min(max_n + 1, n_original_tokens + 1)):
+            for i in xrange(n_original_tokens - n + 1):
+                if original_tokens[i] not in stop_words and original_tokens[i+n-1] not in stop_words:
+                    tokens.append(" ".join(original_tokens[i: i + n]))
+
+    return tokens
+
+

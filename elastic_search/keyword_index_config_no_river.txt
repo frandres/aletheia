@@ -1,0 +1,48 @@
+curl -XPUT 127.0.0.1:9200/catnews_spanish -d '{
+   "settings":{
+      "index":{
+         "analysis":{
+            "analyzer":{
+               "analyzer_shingle":{
+                  "tokenizer":"standard",
+                  "filter":["standard", "lowercase", "filter_stop", "filter_shingle"]
+               },
+               "analyzer_keyword_stream":{
+                  "tokenizer":"pattern",
+                  "filter":[ "capture_patterns", "lowercase","filter_stop" ]
+               }
+            },
+
+
+            "filter":{
+		"capture_patterns" : {
+                  "type" : "pattern_capture",
+                  "preserve_original" : 1,
+                  "patterns" : ["|(@)|"]
+               },
+               "filter_shingle":{
+                  "type":"shingle",
+                  "max_shingle_size":3,
+                  "min_shingle_size":2,
+                  "output_unigrams":"true"
+               },
+               "filter_stop":{
+                  "type":"stop",
+                  "stopwords":"_spanish_"	     
+               }
+            }
+         }
+      }
+   },
+   "mappings":{
+      "news_article":{
+         "properties":{
+            "body":{
+               "search_analyzer":"analyzer_keyword_stream",
+               "index_analyzer":"analyzer_shingle",
+               "type":"string"
+            }
+         }
+      }
+   }
+}'
