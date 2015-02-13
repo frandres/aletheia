@@ -1,2 +1,0 @@
-user = 'diegoolano'
-pwd = 'francisco'
