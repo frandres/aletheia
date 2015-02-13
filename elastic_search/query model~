@@ -1,0 +1,10 @@
+{
+    "disable_coord": true,
+    "fields" : ["body","title"],
+    "query" : {
+        "should": [
+              { "term": { "text": "organizaciones profesionales agrarias" }},
+              { "term": { "text": "red"   }}
+            ]
+    }
+}

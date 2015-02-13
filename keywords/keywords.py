@@ -32,8 +32,7 @@ def proper_keyword(keyword,stopwords):
     words = keyword.split(' ')
     return words[0] not in stopwords and words[len(words)-1] not in stopwords
                
-def main():
-    folder = sys.argv[1]
+def extract_keywords(folder):
     doc_names = [folder+x for x in os.listdir(folder)]
     docs = []
 
@@ -42,7 +41,6 @@ def main():
         docText = '\n\n'.join([paragraph.text.encode('utf-8') for paragraph in document.paragraphs])
         docText = strip_accents(docText)
         docs.append(docText)
-        print doc_name
 
 
     tfidf = TfidfVectorizer(ngram_range=(1,3),tokenizer=tokenizer_with_stemming,stop_words = [])
@@ -51,13 +49,14 @@ def main():
     features = tfidf.get_feature_names()
 
     i = 0
+    doc_to_keywords = {}
     for doc_name in doc_names:
         values = t.todense()[i,:].tolist()[0]
         order = numpy.argsort(values).tolist()
         order.reverse()
-        print doc_name
 
         keywords = [features[x] for x in order[0:1000] if proper_keyword(features[x],stopwords)]    
-        print keywords[1:100]
+        doc_to_keywords[doc_name] = keywords
         i+=1
-main()
+    return doc_to_keywords
+        

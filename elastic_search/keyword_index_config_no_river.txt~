@@ -43,11 +43,6 @@ curl -XPUT 127.0.0.1:9200/catnews_spanish -d '{
                "index_analyzer":"analyzer_shingle",
                "type":"string"
             }
-            "title":{
-               "search_analyzer":"analyzer_keyword_stream",
-               "index_analyzer":"analyzer_shingle",
-               "type":"string"
-            }
          }
       }
    }
