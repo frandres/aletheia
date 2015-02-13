@@ -69,7 +69,7 @@ for coma in comarcas:
                             jso["source"] = "la vanguardia"
                             textp = text.split("\n")
                             jso["title"] = textp[0]
-                            jso["body"] = textp[1:][0].replace("’","'").replace("“",'"').replace("”",'"')                            
+			    jso["body"] = "\n".join(textp[1:]).replace("’","'").replace("“",'"').replace("”",'"')
                             
                             datepieces = root.split("/")[-3:]
                             jso["date"] = "-".join(datepieces)
@@ -164,7 +164,7 @@ for gs in globs:
                             jso["source"] = "la vanguardia"
                             textp = text.split("\n")
                             jso["title"] = textp[0]
-                            jso["body"] = textp[1:][0].replace("’","'").replace("“",'"').replace("”",'"')                            
+			    jso["body"] = "\n".join(textp[1:]).replace("’","'").replace("“",'"').replace("”",'"')
                             
                             datepieces = root.split("/")[-3:]
                             jso["date"] = "-".join(datepieces)
@@ -181,10 +181,6 @@ for gs in globs:
                             #do language detection
                             jso["language"] = det_language(jso["body"])
                             #print(jso)
-                            #pp.pprint(json)                          
-                            #print(json.loads(json.JSONEncoder(ensure_ascii=False).encode(jso)))
-                            #print(json.dumps(json.JSONEncoder(ensure_ascii=False).encode(jso),ensure_ascii=False))
-                            #print(json.loads(json.JSONEncoder(ensure_ascii=False).encode(jso),))
                           
                             if jso["language"] == "spanish":
                                 #print "add to spanish db\n"
@@ -251,7 +247,7 @@ for rs in regiones:
                             jso["source"] = "la vanguardia"
                             textp = text.split("\n")
                             jso["title"] = textp[0]
-                            jso["body"] = textp[1:][0].replace("’","'").replace("“",'"').replace("”",'"')                            
+			    jso["body"] = "\n".join(textp[1:]).replace("’","'").replace("“",'"').replace("”",'"')
                             
                             datepieces = root.split("/")[-3:]
                             jso["date"] = "-".join(datepieces)
@@ -268,10 +264,6 @@ for rs in regiones:
                             #do language detection
                             jso["language"] = det_language(jso["body"])
                             #print(jso)
-                            #pp.pprint(json)                          
-                            #print(json.loads(json.JSONEncoder(ensure_ascii=False).encode(jso)))
-                            #print(json.dumps(json.JSONEncoder(ensure_ascii=False).encode(jso),ensure_ascii=False))
-                            #print(json.loads(json.JSONEncoder(ensure_ascii=False).encode(jso),))
                           
                             if jso["language"] == "spanish":
                                 #print "add to spanish db\n"
