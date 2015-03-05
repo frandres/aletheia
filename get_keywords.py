@@ -1,4 +1,4 @@
-
+from elasticsearch import Elasticsearch
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
 
