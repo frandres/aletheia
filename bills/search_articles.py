@@ -1,7 +1,15 @@
+'''
+TODO:
 
+1) Insert entities in MongoDB.- DONE
+2) FIgure out what the differences are.
+3) Compute IDF. Print that. Analyze. Be happy
+'''
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
 from nltk.stem import SnowballStemmer
+from entities import get_entities
+from collections import defaultdict
 
 from elasticsearch import Elasticsearch
 import matplotlib.pyplot as plt
@@ -27,11 +35,12 @@ def get_idf(word):
     q = {'query': {'bool': {'disable_coord': True, 'must': [{'match_phrase': {'body': {'analyzer': 'analyzer_keywords', 'query': word}}}]}}}
 
     count = es.count(index='catnews_spanish',body =q)['count']
+    N = es.count(index='catnews_spanish')['count']
 
-    return log(1+count)
+    return log(float(N)/(1+count))
 
 
-def apply_rocchio(documents,keywords,alpha=1,beta=0.5):
+def apply_rocchio(documents,keywords,alpha=1,beta=0.5,min_freq=3.0):
     #eywords = zip(keywords,[1.0/len(keywords) for i in range(len(keywords))])
     # This dict will store the new keywords.
     new_keywords = {}
@@ -45,7 +54,7 @@ def apply_rocchio(documents,keywords,alpha=1,beta=0.5):
 
     # Now analyze the documents
 
-    tfidf_v = CountVectorizer(ngram_range=(1,3),stop_words = stopwords, tokenizer = tokenizer_with_stemming)
+    tfidf_v = CountVectorizer(ngram_range=(1,3),stop_words = stopwords, tokenizer = tokenizer_with_stemming,min_df=float(min_freq)/len(documents))
 
     t = tfidf_v.fit_transform(documents)
     features = tfidf_v.get_feature_names()
@@ -79,168 +88,174 @@ def apply_rocchio(documents,keywords,alpha=1,beta=0.5):
             else:
                 new_keywords[keyword]= beta*weight/(doc_norm*len(documents))
 
-    print len(keywords)
-    print len(new_keywords)
     return [(y,x) for (x,y) in new_keywords.items()]
 
-def rank_entities(article_bodies):
+'''
+Given a list of articles, 
+does named entity recognition and
+returns a list of dictionaries containing information about the entities found
+
+'''
+def article2entities(articles):
     i = 0
-    for x in article_bodies:
-        print i
+    entities = {}
+    for (body,weight,article_id) in articles:
         i+=1
-        for (_,lista) in get_entities(x,'es').items():
-            for entity in lista:
-                if entity in all_entities_freq:
-                    all_entities_freq[entity]+=1
+        for (entity_name,entity_dict) in get_entities(body).items():
+
+            # Update the aggregated dict. 
+
+            freq = entity_dict['freq']
+            aliases = entity_dict['aliases']
+          
+            for name in aliases:
+                if name in entities:
+                    entities[name]['freq']+=freq
+                    entities[name]['weight']['articles'].append({'article_weight':weight,'article_ranking':i,'article_id':article_id})
+                    entities[name]['weight']['value']+=weight*1
+                    for alias in aliases:
+                        if alias not in entities[name]['aliases']:
+                            entities[name]['aliases'].append(alias)
                 else:
-                    all_entities_freq[entity]=1
+                    entities[entity_name] = {}
+                    entities[entity_name]['freq']=freq
+                    entities[entity_name]['name']=entity_name
+                    entities[entity_name]['weight']={}
+                    entities[entity_name]['weight']['value']=weight*1
+                    entities[entity_name]['weight']['articles']=[{'article_weight':weight,'article_ranking':i,'article_id':article_id}]
+                    entities[entity_name]['aliases'] = aliases
+                
+    return entities.values()
 
-    print all_entities_freq
-    print ' ' 
-    ranking = sorted(all_entities_freq.items(),key=lambda x: x[1],reverse= True)
-    print ranking[0:20]
+'''
+Given a list of dictionaries of entities and a collection, insert/update them in MongoDB and
+set a 'mongoid' attribute in the dictionary with the corresponding MongoDB id.
+'''
+def insert_entities(entities,collection):
+    for entity in entities:
+        for alias in entity['aliases']:
+            res = collection.find({'name':entity['name']})
+            if res.count()>0:
+                break
 
-def distance(x,y):
-    return sqrt(x*x+y*y)
+        if res.count()>0:
+            if res.count()>1:
+                raise Exception('Non unique entity')
+            # Update list of aliases
 
-def best_point(x,y):
-    last_point_x = x[len(x)-1]
+            mongo_aliases = res[0]['aliases']
+            for alias in entity['aliases']:
+                if alias not in mongo_aliases:
+                    mongo_aliases.append(alias)
+                collection.update({'name':entity['name']},{'$set':{'aliases':mongo_aliases}})
 
-    last_point_y = -1+y[len(y)-1]
-    norm = distance(last_point_x,last_point_y)
+        else:
+            # Create a new mongo document containing the name and aliases and fetch the id.
+            mongo_entity = {}
+            mongo_entity['name'] = entity['name']
+            mongo_entity['aliases'] = entity['aliases']
+            collection.insert(mongo_entity)
+            res = collection.find({'name':entity['name']})
+        
+        entity['mongoid'] = res[0]['_id']
 
-    last_point_x = last_point_x / norm
-    last_point_y = last_point_y / norm
+    return entities
 
-    dist = []
-    for i in range(len(x)):
-        x_i = x[i]
-        y_i = -1+y[i]
+def find_cutting_point(scores, epsilon = 0.001,window_size = 50):
+    for i in range(50,len(scores)):
+        slope = abs(float(scores[i][0]-scores[i-window_size][0])/(window_size))
+        if slope<epsilon:
+            plt.plot(range(len(scores)),[score for (score,_) in scores])
+            plt.plot(i, scores[i][0], 'ro')
+            plt.savefig('./results/article_weight/'+scores[i][1]+'.png')
+            plt.clf()
+            print scores[i][0]
+            return i
 
-        dot_product = x_i* last_point_x + y_i* last_point_y
+def insert_entities_into_bills(entities,collection,bill_id):
+    bill_entities = []
+    for entity in entities:
+        bill_entity = {}
+        bill_entity['_id'] = entity['mongoid']
+        bill_entity['weight'] = entity['weight']
+        bill_entity['freq'] = entity['freq']
+        bill_entity['name'] = entity['name']
+        bill_entities.append(bill_entity)
+    print bill_id
+    print collection.find({'id':bill_id}).count()
+    collection.update({'id':bill_id},{'$set':{'entities':bill_entities}})
 
-
-        x_cord = x_i - dot_product*last_point_x
-        y_cord = y_i - dot_product*last_point_y
-
-        dist.append(distance(x_cord,y_cord))
-    
-    return dist.index(max(dist))
     
 conn = MongoClient()
 db = conn.catalan_bills
 
-for bill in db.bills.find()[0:40]:
-    keywords = bill['keywords']
+
+for bill in db.bills.find()[0:1]:
+    original_keywords = bill['keywords']
     es = Elasticsearch(timeout=30)
-    query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':x,'boost':y,'analyzer':'analyzer_keywords'}}} for [x,y] in keywords]}}}
 
+    # Get rocchio's keywords.
 
-    #query = {"query":{"bool":{"disable_coord": True,"should": {'match':{'body':{'query':bill['text'],'analyzer':'analyzer_shingle'}}}}}}
-#        query = {"query":{"match":{"disable_coord": True,{'body':{'match':{'body':bill[body],'analyzer':'analyzer_shingle'}}}}}}
+    query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':x,'boost':y,'analyzer':'analyzer_keywords'}}} for [x,y] in original_keywords]}}}
 
-    score = []
+    results = es.search(index="catnews_spanish", body=query,size =10,search_type = 'dfs_query_then_fetch',timeout=30,sort='_score:desc,_id:desc')['hits']['hits']
 
-    results = es.search(index="catnews_spanish", body=query,size =10,timeout=30)['hits']['hits']
     documents = [x['_source']['body'] for x in results[0:10]]
 
-    rocchio_kws = apply_rocchio(documents,keywords,alpha=1,beta=0.5)
+    rocchio_kws = apply_rocchio(documents,original_keywords,alpha=1,beta=0.5)
+    rocchio_kws.sort(reverse=True)
 
+    # Execute the new query.
 
-    rocchio_kws.sort(reverse= True)
-   
-    print bill['title']
-    for (x,y) in rocchio_kws[0:100]:
-        if y not in [a for [a,b] in keywords]:
-            print x,y
+    query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':kw,'boost':weight,'analyzer':'analyzer_keywords'}}} for (weight,kw) in rocchio_kws[0:1024]]}}}
 
-    query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':kw,'boost':weight,'analyzer':'analyzer_keywords'}}} for (weight,kw) in rocchio_kws[0:3]]}}}
-    results = es.search(index="catnews_spanish", body=query,size =3000,timeout=30)['hits']['hits']
-    scores = []
+    results = es.search(index="catnews_spanish", body=query,search_type = 'dfs_query_then_fetch',size =3000,timeout=30,sort='_score:desc,_id:desc')['hits']['hits']
 
-    for x in results:
-        scores.append(x['_score'])
-        
+    articles = [(x['_source']['body'],x['_score'],x['_id']) for x in results]
 
-    plt.plot(range(len(results)),scores)
-    #i = best_point(range(len(results)),scores)
+    num_articles = find_cutting_point([(y,_id) for (_,y,_id) in articles])
+    print 'There are: ' + str(num_articles) + ' relevant articles'
+    articles = articles[0:num_articles]
 
-    #plt.plot(range(len(results))[i], scores[i], 'rD')
-
-    plt.savefig('plots/'+bill['id']+'-score3.png')
-    plt.clf()
+    print('Finding entities')
+    entities = article2entities(articles[0:10])
+    print('Inserting entities')
+    entities = insert_entities(entities,db.entities)
+    print('Inserting entities into bills')
+    insert_entities_into_bills(entities,db.bills,bill['id'])
+     
+    #print bill['id']
+    #print entities
+    print len(entities)
+    #ranking = sorted(all_entities_freq.items(),key=lambda x: x[1],reverse= True)
 
     '''
-    print len(results)
-    print results[0]['_score']
-    print ''
-    print results[0]['_explanation']['description']
-    print ''
-    print ''
-    print ''
-    for x in results[0]['_explanation']['details']:
-        print x['description']
-        print x['value'] 
-        for x in x['details'][0]['details']:
-            print x
-            print ''
-        print '-----------'
-        print ''
-
-    for x in results[0]['_explanation']['details'][0]['details'][0]['details']:
-        print x
-        print ''
 
 
-    with open('plots/'+bill['id']+'_full.txt', 'w') as f:
-        f.write(bill['title'].encode('utf-8')+'\n')
-        f.write('|'.join(keywords).encode('utf-8')+'\n')
-        for x in results[0:100]:
-            text = x['_source']['body']
-            f.write(text.encode('utf-8')+'\n-------------------------------------------------\n\n')
 
-
-    for x in results:
-        text = x['_source']['body'].lower()
-        occurring_keywords = []
-        for kw in keywords:
-            if kw in text:
-                occurring_keywords.append(kw)
-        score.append(len(occurring_keywords))
-                
-    plt.plot(range(len(score)),score,'ro')
-
-    plt.savefig('plots/'+bill['id']+'-nwords.png')
+    print len(ranking)
+    plt.plot(range(len(ranking)),[x[1] for x in ranking])
+    plt.savefig('./results/'+bill['id']+'_entities_weights.png')
     plt.clf()
-
-    scores = []
-    derivatives = []
-    for x in results:
-        scores.append(x['_score'])
-        
-
-    plt.plot(range(len(results)),scores)
-    i = best_point(range(len(results)),scores)
-
-    plt.plot(range(len(results))[i], scores[i], 'rD')
-
-    plt.savefig('plots/'+bill['id']+'-score.png')
-    plt.clf()
-with open('plots/'+bill['id']+'.txt', 'w') as f:
-    f.write(bill['title'].encode('utf-8')+'\n')
-    f.write('|'.join(keywords)+'\n')
-    for x in range(i-10,i+10):
-        f.write('\n')
-        f.write('------------------------------------------------------------------------------------\n')
-        f.write(results[x]['_source']['body'].encode('utf-8'))
-'''    
-'''
-
-all_entities_freq={}
-
-article_bodies = [x['_source']['body'] for x in results['hits']['hits']]
+    original_keywords = [x for (x,y) in original_keywords]
 
 
 
-rank_entities(article_bodies)
-'''
+    with open('./results/'+bill['id']+'_summary.txt', 'w') as f:
+        f.write(bill['text'][0:500].encode('utf8')+'\n\n')
+        f.write('\n----------------- ROCCHIO FOUND -----------------\n\n')
+
+
+        i = 0
+        for (weight, kw) in rocchio_kws[0:1024]:
+            (weight,kw) = rocchio_kws[i]
+            if kw not in original_keywords:
+                f.write(kw.encode('utf8')+ ' with weight: '+ str(weight) + ' and ranking ' + str(i)+'\n')
+            i+=1
+
+        i = 0
+        f.write('\n----------------- ENTITIES FOUND -----------------\n\n')
+        for (entity,weight) in ranking:
+            f.write(entity+ ' with weight: '+ str(weight) + ' and ranking ' + str(i)+'\n')
+            i+=1
+    '''
