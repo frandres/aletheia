@@ -1,0 +1,7 @@
+col = db.entities
+col.createIndex({name:1})
+
+col = db.entities_bills
+col.createIndex({name:1})
+col.createIndex({bill_id:1})
+

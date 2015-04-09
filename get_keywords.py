@@ -1,7 +1,7 @@
 from elasticsearch import Elasticsearch
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from math import log
-
+from data import data
 
 def get_idf(word):
     es = Elasticsearch()
@@ -41,7 +41,4 @@ def get_keywords(documents, min_freq=3.0, min_ngrams = 1, max_ngrams = 3):
 
     return sorted_keywords
 
-example = ['Diego is in favor of drug legalization', 'Diego said: "Medical Marijuana is a right', 'We believe that drug legalization could lead to the use of medical marijuana',
-           'Diego is in favor of drug legalization', 'Diego said: "Medical Marijuana is a right', 'We believe that drug legalization could lead to the use of medical marijuana']
-
-print get_keywords(example)
+print get_keywords(data.values())

@@ -1,15 +1,9 @@
-'''
-TODO:
-
-1) Insert entities in MongoDB.- DONE
-3) Compute IDF. Print that. Analyze. Be happy
-'''
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
 from nltk.stem import SnowballStemmer
 from entities import get_entities
 from collections import defaultdict
-
+from entities_functions import merge_entities
 from elasticsearch import Elasticsearch
 import matplotlib.pyplot as plt
 from pymongo import MongoClient
@@ -69,16 +63,12 @@ def apply_rocchio(documents,keywords,alpha=1,beta=0.5,min_freq=3.0):
         for j in range(len(features)):
             freq = matrix[i,j]
             if freq >2:
-                #print documents[i]
-                #print features[j]
-                #print freq
 
                 idf = get_idf(features[j])
                 tf_idf_w = idf*freq
                 doc_norm+= tf_idf_w**2
                 if tf_idf_w >0:
                     doc[features[j]] = tf_idf_w
-                #print 'done'
                 
         doc_norm = sqrt(doc_norm)
         for (keyword,weight) in doc.items():
@@ -91,38 +81,39 @@ def apply_rocchio(documents,keywords,alpha=1,beta=0.5,min_freq=3.0):
 
 '''
 Given a list of articles, 
-does named entity recognition and
-returns a list of dictionaries containing information about the entities found
-
+perform Named Entity Recognition and
+return a list of dictionaries containing information about the entities found
 '''
-def article2entities(articles):
+def article2entities(articles,index):
     i = 0
     entities = {}
-    for (body,weight,article_id) in articles:
+    for (body,weight,article_id) in articles[0:10000]:
         i+=1
-        for (entity_name,entity_dict) in get_entities(body).items():
-            if entity_name == '':
-                print 'HUM'
-                continue
+        print ' Article {} out of {}'.format(i,len(articles))
+        for (entity_name,entity_dict) in get_entities(body,index).items():
 
             # Update the aggregated dict. 
 
             freq = entity_dict['freq']
             aliases = entity_dict['aliases']
-            
+
+            # If the entity has already been found for this bill, update the existing instance.
+            # Otherwise create a new instance.
+                        
             if entity_name in entities:
                 entities[entity_name]['freq']+=freq
                 entities[entity_name]['weight']['articles'].append({'article_weight':weight,'article_ranking':i,'article_id':article_id})
                 entities[entity_name]['weight']['value']+=weight*1
+                
+                # Merge tag counts.
+
                 for (tag,count) in entity_dict['tags'].items():
                     if tag in entities[entity_name]['tags']:
                         entities[entity_name]['tags'][tag]+=count
                     else:
                         entities[entity_name]['tags'][tag]=count
-                    if count>1000:
-                        print entity_dict
-                        print entities[entity_name]['tags'].items()
-                        raise Exception('HALT')
+
+                # Merge aliases list.
 
                 for alias in aliases:
                     if alias not in entities[entity_name]['aliases']:
@@ -136,7 +127,6 @@ def article2entities(articles):
                 entities[entity_name]['weight']['value']=weight*1
                 entities[entity_name]['weight']['articles']=[{'article_weight':weight,'article_ranking':i,'article_id':article_id}]
                 entities[entity_name]['aliases'] = aliases
-            
     return entities.values()
 
 '''
@@ -148,52 +138,28 @@ def insert_entities(entities,collection,bill_id):
     for entity in entities:
         i+=1
         
-        for alias in entity['aliases']:
-            res = collection.find({'name':entity['name']})
-            if res.count()>0:
-                break
+        # Create a Mongo Entity instance based on the entity.
 
+        mongo_entity = {}
+        mongo_entity['name'] = entity['name']
+        mongo_entity['aliases'] = entity['aliases']
+        mongo_entity['bills'] = [bill_id]
+        mongo_entity['tags'] = entity['tags']
+
+        res = collection.find({'name':entity['name']})
+        # Insert or update.
         if res.count()>0:
             if res.count()>1:
                 raise Exception('Non unique entity')
 
-            # Register the bill as related to the entity.
-            mongo_bills = res[0]['bills']
-            if bill_id not in mongo_bills:
-                mongo_bills.append(bill_id)
-                collection.update({'name':entity['name']},{'$set':{'bills':mongo_bills}})
-
-            # Update list of aliases
-
-            mongo_aliases = res[0]['aliases']
-            for alias in entity['aliases']:
-                if alias not in mongo_aliases:
-                    mongo_aliases.append(alias)
-            collection.update({'name':entity['name']},{'$set':{'aliases':mongo_aliases}})
-            
-            # Update tags
-
-            mongo_tags= res[0]['tags']
-
-            for (tag,count) in entity['tags'].items():
-                if tag in mongo_tags:
-                    mongo_tags[tag] += count
-                else:
-                    mongo_tags[tag] = count
-
-            collection.update({'name':entity['name']},{'$set':{'tags':mongo_tags}})
+            merge_entities(mongo_entity,{'name':mongo_entity['name']},collection)
 
         else:
             # Create a new mongo document containing the name and aliases and fetch the id.
-            mongo_entity = {}
-            mongo_entity['name'] = entity['name']
-            mongo_entity['aliases'] = entity['aliases']
-            mongo_entity['bills'] = [bill_id]
-            mongo_entity['tags'] = entity['tags']
             collection.insert(mongo_entity)
-            res = collection.find({'name':entity['name']})
 
-        # We need to store this for linking the bill to the entity.
+        # We need to store the mongo_id in the dictionary for linking the bill to the entity.
+        res = collection.find({'name':entity['name']})
         entity['mongoid'] = res[0]['_id']
 
     return entities
@@ -212,12 +178,12 @@ def insert_entities_into_bills(entities,collection,bill_id):
     bill_entities = []
     for entity in entities:
         bill_entity = {}
-        bill_entity['_id'] = entity['mongoid']
+        bill_entity['entity'] = entity['mongoid']
         bill_entity['weight'] = entity['weight']
         bill_entity['freq'] = entity['freq']
         bill_entity['name'] = entity['name']
-        bill_entities.append(bill_entity)
-    collection.update({'id':bill_id},{'$set':{'entities':bill_entities}})
+        bill_entity['bill'] = bill_id
+        collection.insert(bill_entity)
 
 def get_rocchio_keywords(original_keywords, num_articles = 10,max_rocchio_num_articles =100):
 
@@ -246,11 +212,12 @@ db = conn.catalan_bills
 bills = []
 for bill in db.bills.find():
     bills.append(bill)
-
 for bill in bills:
     original_keywords = bill['keywords']
+    #print bill['text'][0:1000].encode('utf8')
+    #print bill['keywords']
     es = Elasticsearch(timeout=30)
-
+   
     # Get rocchio's keywords.
 
     rocchio_kws = get_rocchio_keywords(original_keywords)
@@ -275,22 +242,15 @@ for bill in bills:
     print(' Found {} relevant articles'.format(num_articles))
 
     print(' Finding entities')
-    entities = article2entities(articles)
-    
+    entities = article2entities(articles[0:num_articles],'catnews_spanish')
     print(' Found {} entities'.format(len(entities)))
         
     print(' Inserting entities')
     entities = insert_entities(entities,db.entities,bill['id'])
     print(' Inserting entities into bills')
-    insert_entities_into_bills(entities,db.bills,bill['id'])
-     
-    #print bill['id']
-    #print entities
-    #ranking = sorted(all_entities_freq.items(),key=lambda x: x[1],reverse= True)
+    insert_entities_into_bills(entities,db.entities_bills,bill['id'])
 
     '''
-
-
 
     print len(ranking)
     plt.plot(range(len(ranking)),[x[1] for x in ranking])
