@@ -101,8 +101,9 @@ def article2entities(articles,index):
             # Otherwise create a new instance.
                         
             if entity_name in entities:
+                entities[entity_name]['articles'].append(article_id)
                 entities[entity_name]['freq']+=freq
-                entities[entity_name]['weight']['articles'].append({'article_weight':weight,'article_ranking':i,'article_id':article_id})
+                entities[entity_name]['weight']['articles'].append({'article_weight':weight,'article_ranking':i,'article_id':article_id,'frequency':freq})
                 entities[entity_name]['weight']['value']+=weight*1
                 
                 # Merge tag counts.
@@ -120,12 +121,13 @@ def article2entities(articles,index):
                         entities[entity_name]['aliases'].append(alias)
             else:
                 entities[entity_name] = {}
+                entities[entity_name]['articles'] = [article_id]
                 entities[entity_name]['freq']=freq
                 entities[entity_name]['name']=entity_name
                 entities[entity_name]['weight']={}
                 entities[entity_name]['tags'] = entity_dict['tags']
                 entities[entity_name]['weight']['value']=weight*1
-                entities[entity_name]['weight']['articles']=[{'article_weight':weight,'article_ranking':i,'article_id':article_id}]
+                entities[entity_name]['weight']['articles']=[{'article_weight':weight,'article_ranking':i,'article_id':article_id,'frequency':freq}]
                 entities[entity_name]['aliases'] = aliases
     return entities.values()
 
@@ -174,7 +176,7 @@ def find_cutting_point(scores, epsilon = 0.001,window_size = 50):
             plt.clf()
             return i
 
-def insert_entities_into_bills(entities,collection,bill_id):
+def relate_entities_bills(entities,collection,bill_id):
     bill_entities = []
     for entity in entities:
         bill_entity = {}
@@ -185,12 +187,29 @@ def insert_entities_into_bills(entities,collection,bill_id):
         bill_entity['bill'] = bill_id
         collection.insert(bill_entity)
 
+def relate_entities_documents(entities,collection,bill_id):
+    for entity in entities:
+        for article in entity['articles']:
+            collection.insert({'entity': entity['mongoid'], 'article': article,'bill_id':bill_id})
+
+def relate_entities_keywords(entities,collection,keywords_documents,bill_id):
+    for entity in entities:
+        for article in entity['articles']:
+            for keyword in keywords_documents[article]:
+                entity_keyword = {}
+                entity_keyword['entity'] = entity['mongoid']
+                entity_keyword['keyword'] = keyword['word']
+                entity_keyword['frequency'] = keyword['frequency']
+                entity_keyword['idf'] = keyword['idf']
+                entity_keyword['bill_id'] = bill_id
+                collection.insert(entity_keyword)
+
+
 def get_rocchio_keywords(original_keywords, num_articles = 10,max_rocchio_num_articles =100):
 
     query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':x,'boost':y,'analyzer':'analyzer_keywords'}}} for [x,y] in original_keywords[0:1024]]}}}
     
     es = Elasticsearch(timeout=30)
-
     results = es.search(index="catnews_spanish", body=query,size =100,search_type = 'dfs_query_then_fetch',sort='_score:desc,_id:desc')['hits']['hits']
 
     score = results[num_articles-1]['_score']
@@ -205,6 +224,21 @@ def get_rocchio_keywords(original_keywords, num_articles = 10,max_rocchio_num_ar
     kws = [[x,y] for (y,x) in rocchio_kws]
 
     return kws
+
+def document2keywords(elasticsearch_results):
+    document_keywords = {}
+    for hit in elasticsearch_results['hits']['hits']:
+        kws = []
+        for kw in hit['_explanation']['details']:
+            match = re.search('.*body:(.+)\^.*', kw['description'])
+            word = match.group(1)
+            frequency = kw['details'][0]['details'][1]['details'][0]['details'][0]['value']
+            idf = kw['details'][0]['details'][1]['details'][1]['value'] 
+            kws.append({'word':word,'frequency':frequency,'idf':idf})
+        document_keywords[hit['_id']] = kws
+
+    return document_keywords
+
      
 conn = MongoClient()
 db = conn.catalan_bills
@@ -212,11 +246,13 @@ db = conn.catalan_bills
 bills = []
 for bill in db.bills.find():
     bills.append(bill)
+
 for bill in bills:
+
     original_keywords = bill['keywords']
     #print bill['text'][0:1000].encode('utf8')
     #print bill['keywords']
-    es = Elasticsearch(timeout=30)
+
    
     # Get rocchio's keywords.
 
@@ -229,11 +265,16 @@ for bill in bills:
 
     # Execute the new query.
 
-    query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':kw,'boost':weight,'analyzer':'analyzer_keywords'}}} for [kw,weight] in rocchio_kws[0:1024]]}}}
+    query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':kw,'boost':weight,'analyzer':'analyzer_keywords'}}} for [kw,weight] in rocchio_kws[0:10]]}}}
 
-    results = es.search(index="catnews_spanish", body=query,search_type = 'dfs_query_then_fetch',size =3000,sort='_score:desc,_id:desc')['hits']['hits']
+    print 'Searching'
+    es = Elasticsearch(timeout=100)
 
-    articles = [(x['_source']['body'],x['_score'],x['_id']) for x in results]
+    results = es.search(index="catnews_spanish", explain = True, body=query,search_type = 'dfs_query_then_fetch',size =3000,sort='_score:desc,_id:desc')
+
+    document_keywords = document2keywords(results)
+
+    articles = [(x['_source']['body'],x['_score'],x['_id']) for x in results['hits']['hits']]
 
     num_articles = find_cutting_point([(y,_id) for (_,y,_id) in articles])
 
@@ -247,9 +288,15 @@ for bill in bills:
         
     print(' Inserting entities')
     entities = insert_entities(entities,db.entities,bill['id'])
-    print(' Inserting entities into bills')
-    insert_entities_into_bills(entities,db.entities_bills,bill['id'])
 
+    print(' Relating entities with bills')
+    relate_entities_bills(entities,db.entities_bills,bill['id'])
+
+    print(' Relating entities with documents')
+    relate_entities_documents(entities,db.entities_documents,bill['id'])
+
+    print(' Relating entities with keywords')
+    relate_entities_keywords(entities,db.entities_keywords,document_keywords,bill['id'])
     '''
 
     print len(ranking)
