@@ -1,0 +1,65 @@
+% document de test for report-DMKM.cls (LaTeX2e)
+% Created May 15, 2012
+
+% We use the style given in rapport-DMKM.cls
+\documentclass{report-DMKM}
+
+% this package (optionnal) allows merging rows and columns in latex table 
+
+\usepackage{multirow}
+
+%The following fields (title, author, date, tutors et place) must be present
+\title{Mining parliamentary data and news articles \newline to find patterns of collaboration between politicians and third party actors}
+\author{Francisco Andr\'es RODR\'IGUEZ DRUMOND}
+% Defense date
+\date{July 7th, 2014}
+\tutors{\mbox{Marta Arias, Universitat Polit\`ecnica de Catalunya},\newline
+        Josep Larriba, Data Management group (DAMA-UPC),\newline}
+
+\place{Data Management group, Barcelona, Spain.}
+% You can add the logo of the institution where you carry out your internship. Example here ERIC lab
+
+\logo{img/dama_logo.jpg}{25mm} 
+
+\begin{document}
+
+% Cover page (mandatory)
+\maketitle
+
+\newpage
+% summary in English  (mandatory)
+\begin{abstract}
+LOPEN IPSUM
+\end{abstract}
+
+% summary in French  (mandatory)
+\begin{resume}
+LOPEN IPSUM
+\end{resume}
+
+% table of content   (mandatory)
+\tabledesmatieres
+
+\input{chapters/institution}
+\newpage
+\input{chapters/acknowledgement}
+\newpage
+\input{chapters/introduction}
+\newpage
+\input{chapters/relatedwork}
+\newpage
+\input{chapters/proposal}
+\newpage
+\input{chapters/implementation}
+\newpage
+\input{chapters/results}
+\newpage
+
+\references
+
+ 
+\appendixECD
+
+
+\end{document}
+

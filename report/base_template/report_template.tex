@@ -1,0 +1,221 @@
+% document de test for report-DMKM.cls (LaTeX2e)
+% Created May 15, 2012
+
+% We use the style given in rapport-DMKM.cls
+\documentclass{report-DMKM}
+
+% this package (optionnal) allows merging rows and columns in latex table 
+
+\usepackage{multirow}
+
+%The following fields (title, author, date, tutors et place) must be present
+\title{Place here the title of your internship}
+\author{Forename FAMILY\_NAME}
+% Defense date
+\date{06/29/2012}
+\tutors{Supervisors and affiliations}
+\place{Location of your internship}
+% You can add the logo of the institution where you carry out your internship. Example here ERIC lab
+
+\logo{img/logo-ERIC}{25mm}
+
+\begin{document}
+
+% Cover page (mandatory)
+\maketitle
+
+\newpage
+% summary in English  (mandatory)
+\begin{abstract}
+Here is your abstract translated in english.
+\end{abstract}
+
+% summary in French  (mandatory)
+\begin{resume}
+Le présent document est un exemple de fichier \LaTeX utilisant le style \texttt{report-DMKM.cls} qui décrit la structure d'un rapport de stage pour le Master DMKM, rédigé en anglais.
+Vous devez placer ici votre résumé en français.
+Attention, l'en-tête de votre rapport, comprenant le titre, votre nom, la date, les logos \ldots et les résumés en français et en anglais, ne doit pas dépasser 1 page au total (il s'agit de la couverture).
+\end{resume}
+
+% table of content   (mandatory)
+\tabledesmatieres
+
+\section{Hosting institution}
+
+Give an overview about your hosting institution (1 page max)  
+
+\section{Acknowledgement}
+
+You can thank all people and institutions that helped you in your internship
+
+\newpage
+
+\section{Introduction}
+
+This section presents a detailed overview of the work. It gives the objectives/problematics, the methodology you propose and the main results. It ends by a presentation of the content of each section.
+
+The references must be in bibtex format see  
+ \texttt{biblio.bib}).
+all complementary details are given here  : \url{http://www.bibtex.org/}.
+This will give the references like  \cite{HAL02}.
+
+\section{Exemple de section}
+
+You develop the second part of your document .
+The final document must be between 20 - 30 pages  , 
+If needed, you can add appendices. 
+Here bellow a typical plan for this document : 
+
+\begin{enumerate}
+
+\item
+Presentation of the subject, expectations etc.
+
+\item
+Biblio analysis; this will allow to situate your work within the domain and to take advantage from what it has been done by other authors. 
+
+\item
+Your proposal and your justification
+
+\item
+results
+
+\item
+Discussion.
+ 
+\item
+Conclusions and or perspectives
+highlight your main results 
+\item
+references.
+
+\item
+Appendices.
+
+\end{enumerate}
+
+ 
+\newpage
+
+\subsection{Example of subsectionn}
+
+Vous pouvez utiliser des sous-sections.
+
+\subsubsection{example of sub/sub section}
+
+arege  ehheu kieke oe rppf ppjjf je 
+you can use more format tools such as  \texttt{paragraph} as followt :
+
+\paragraph{Paragraph 1 : }
+blabla blabla blabla
+
+\paragraph{Paragraphe  : }
+blabla blabla blabla
+
+\bigskip
+
+To includ  graphics  \texttt{includegraphics} do this :
+
+\begin{center}
+\includegraphics[width=2cm]{img/logoECD}
+\end{center}
+ 
+Put all your figures in the repository  \texttt{/img},  
+
+\subsection{handling tables}
+
+In \LaTeX , tables are handled by   the command \texttt{tabular} as follow :
+
+\begin{tabular}{|c|c|c|}
+% hline draw vertical line
+\hline
+A & B & C\\
+\hline
+\hline
+$a_1$ & $b_2$ & $c_1$\\
+\hline
+$a_3$ & $b_2$ & $c_3$\\
+\hline
+$a_2$ & $b_1$ & $c_3$\\
+\hline
+\end{tabular}
+
+
+\medskip
+
+more complex table
+
+\begin{center}
+\begin{tabular}{|c||c|c|}
+\hline
+A & B & C\\
+\hline
+\hline
+\multirow{3}{5mm}{$a_1$}
+& $b_2$ & $c_1$\\
+% 
+\cline{2-3}
+& \multicolumn{2}{c|}{$b_2$ et $c_3$}\\
+\cline{2-3}
+& $b_1$ & $c_3$\\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{maths}
+
+In \LaTeX, the formula are within  ``dollar'' as follow : $a.x + b = 0$, $x_0$, $y^{12}$, $\sum_{i=0}^{n}{f(i)}$ \ldots
+Or :
+$$f(x) = \min_{h \in H}{h(\frac{n}{x})}$$
+et numérotées comme suit :
+\begin{center}
+\begin{equation}
+\label{formule1}
+g(z)=\frac{1}{2}f(z) + 1
+\end{equation}
+\end{center}
+
+this allows equation referencing  \ref{formule1}.
+
+\subsection{to know more about \LaTeX}
+
+ 
+
+\begin{itemize}
+
+\item
+Joli manual for LaTeX2e de B. Bayart : \url{ftp://ftp.inria.fr/pub/TeX/CTAN/info/JMPL.ps.gz}  
+\item
+FAQ \LaTeX : \url{http://www.grappa.univ-lille3.fr/FAQ-LaTeX/}
+
+\item
+LaTeX2e,   de M. Goosens : \url{http://tex.loria.fr/}
+
+\item
+An example of document \LaTeX : \url{http://iml.univ-mrs.fr/~regnier/enseignement/tex-tutorial/}
+
+\item
+ tutorial : \url{http://it.metr.ou.edu/latex/}
+
+\end{itemize}
+
+\newpage
+
+\section{Conclusion}
+
+example of citation : \cite{WIT05}
+
+% References are in  biblio.bib   bibtex format
+\references
+
+ 
+\appendixECD
+
+% add first appendix
+\annexe{First appendix}
+Content
+% add second appendix
+\annexe{second appendix}
+Content
+
+\end{document}

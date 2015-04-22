@@ -1,0 +1,10 @@
+Style LaTeX2e released on 21 may 2012 - DMKM Erasmus Mundus Matser
+ 
+
+Files description :
+- report-DMKM.cls :  LaTeX style for DMKM internship report
+- report_template.tex : guidelines for the achievement of the report
+- biblio.bib : References en bibtex used for the report
+- report_template.pdf : Example 
+- make.sh : code for linux compilation
+- img : repository for pictures and images in different formats .eps or .pdf,...

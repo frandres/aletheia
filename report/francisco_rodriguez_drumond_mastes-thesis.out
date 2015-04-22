@@ -1,0 +1,16 @@
+\BOOKMARK [1][-]{section.1}{Hosting institution}{}% 1
+\BOOKMARK [1][-]{section.2}{Acknowledgement}{}% 2
+\BOOKMARK [1][-]{section.3}{Introduction}{}% 3
+\BOOKMARK [1][-]{section.4}{Related works}{}% 4
+\BOOKMARK [2][-]{subsection.4.1}{Entity co-occurrence: a first step towards the creation of SN}{section.4}% 5
+\BOOKMARK [2][-]{subsection.4.2}{What links two entities? Enriching the SN with the semantics of the relationships}{section.4}% 6
+\BOOKMARK [2][-]{subsection.4.3}{Going beyond the co-occurrence approach: finding links between entities across documents}{section.4}% 7
+\BOOKMARK [2][-]{subsection.4.4}{SNA and political analysis. Has anyone done this before?}{section.4}% 8
+\BOOKMARK [2][-]{subsection.4.5}{Framing our work with respect to the state of the art}{section.4}% 9
+\BOOKMARK [1][-]{section.5}{Proposal}{}% 10
+\BOOKMARK [1][-]{section.6}{Implementation}{}% 11
+\BOOKMARK [2][-]{subsection.6.1}{Modelling topics after bills }{section.6}% 12
+\BOOKMARK [2][-]{subsection.6.2}{Entity Recognition and Preprocessing}{section.6}% 13
+\BOOKMARK [1][-]{section.7}{Results}{}% 14
+\BOOKMARK [1][-]{section.8}{Conclusions}{}% 15
+\BOOKMARK [1][-]{section*.2}{ANNEXES}{}% 16

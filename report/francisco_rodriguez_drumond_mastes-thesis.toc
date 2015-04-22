@@ -1,0 +1,16 @@
+\contentsline {section}{\numberline {1}Hosting institution}{1}{section.1}
+\contentsline {section}{\numberline {2}Acknowledgement}{2}{section.2}
+\contentsline {section}{\numberline {3}Introduction}{3}{section.3}
+\contentsline {section}{\numberline {4}Related works}{5}{section.4}
+\contentsline {subsection}{\numberline {4.1}Entity co-occurrence: a first step towards the creation of SN}{5}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}What links two entities? Enriching the SN with the semantics of the relationships}{6}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Going beyond the co-occurrence approach: finding links between entities across documents}{7}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}SNA and political analysis. Has anyone done this before?}{7}{subsection.4.4}
+\contentsline {subsection}{\numberline {4.5}Framing our work with respect to the state of the art}{8}{subsection.4.5}
+\contentsline {section}{\numberline {5}Proposal}{9}{section.5}
+\contentsline {section}{\numberline {6}Implementation}{10}{section.6}
+\contentsline {subsection}{\numberline {6.1}Modelling topics after bills }{10}{subsection.6.1}
+\contentsline {subsection}{\numberline {6.2}Entity Recognition and Preprocessing}{10}{subsection.6.2}
+\contentsline {section}{\numberline {7}Results}{11}{section.7}
+\contentsline {section}{\numberline {8}Conclusions}{12}{section.8}
+\contentsline {section}{ANNEXES}{I}{section*.2}
