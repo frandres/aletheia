@@ -1,28 +1,5 @@
-\section{Implementation}\label{sec:implementation}
+\section{Conclusions}\label{sec:conclusions}
 
-In this chapter give some relevant implementation details, along with a diagram showing the pipeline of the system. 
+Conclusions come here.
 
-\subsection{Modelling topics after bills }\label{subsec:topic}
-
-\subsection{Entity Recognition and Preprocessing}\label{subsec:getting-entities}
-
-After finding articles related to bills, they are analyzed to find entities that are in turn related to the bills. For this purpose we use MITIE, a state of art tool Named Entity Recognition tool created in the MIT. Given a document, MITIE identifies substrings that contain possible named entities and tags them as \emph{Organization, Location, Person or Miscellaneous}.
-
-Before carrying on the detected entities need to be pre-processed before they can be used. The names found may i) not be correctly delimited (resulting in truncated names or in names that contain excess text) ii) be ambiguous (an entity may have more than one name and a name may refer to more than one entity) and iii) may be noise and not refer to a real entity. 
-
-Name disambiguation is in itself a complex and interesting research topic which escapes the aim of this study. We have however implemented some heuristics we briefly describe below:
-
-\begin{enumerate}
-
-\item \textbf{Entity Normalization}: entities are brought to a canonical form to address spelling variations. This involves i) punctuation sign removal; ii) double, leading and trailing whitespaces removal; iii) leading and trailing stop words removal; iv) string camelization (all characters are put in lowercase except for the first letter of every word, which is in uppercase). 
-
-\item \textbf{Mapping organization initials to the whole name}: when an organization name is detected we aim to detect if there are any other names composed by its initials. Specifically, we aim to exploit a widely found pattern: organizations often have the full name followed by the initials inside parenthesis. 
-
-\item \textbf{Mapping partial names with full names}: when person names are detected we classify them into \emph{full names} (containing more than 1 word) and \emph{short names} (containing one word, which is possible the last or first name of the full name). We then link short names with the nearest, previous full name such that the short name is contained inside the full name.
-
-\item \textbf{Expanding names based on the news corpus}: to address the issue of truncated names (eg 'Word Life Fund' may be truncated and processed as 'World and 'Life Fund')  we: i) look up every name and it's surrounding context in the corpus ii) extract sentences in the top articles and iii) find the longest substring matching these sentences. 
-\end{enumerate}
-
-By doing this we find a list of entities for which we have a list of aliases and a list of tags counts. After doing this, we choose for every entity the tag with the highest frequency as the type of the entity. 
-
-
+Time component - Future work

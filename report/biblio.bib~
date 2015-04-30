@@ -1,26 +1,191 @@
 % exemple de bibliographie bibtex
 % aller voir http://www.bibtex.org/ pour plus de renseignements
 
-@article{HAL02,
-        author = {Halkidi,M. and Batistakis,Y. and Vazirgiannis,M.},
-        title = {Cluster {V}alidity {M}ethods: Part I-II},
-        journal = {Special Interest Groups on Management Of Data},
-        year = {2002}
+@incollection{latent_semantic-index-terrorism,
+  title={Application of latent semantic indexing in generating graphs of terrorist networks},
+  author={Bradford, Roger B},
+  booktitle={Intelligence and Security Informatics},
+  pages={674--675},
+  year={2006},
+  publisher={Springer}
 }
 
-@article{DUN74, 
-        author = {Dunn,J.C.},
-        title = {Well separated clusters and optimal fuzzy partitions},
-        journal = {Journal of {C}ybernetics},
-        volume = {4},
-        pages = {95--104},
-        year = {1974}
+@incollection{lda-topics-entities,
+  title={Analyzing entities and topics in news articles using statistical topic models},
+  author={Newman, David and Chemudugunta, Chaitanya and Smyth, Padhraic and Steyvers, Mark},
+  booktitle={Intelligence and Security Informatics},
+  pages={93--104},
+  year={2006},
+  publisher={Springer}
 }
 
-@book{WIT05,
-        author = {Witten,I.H. and Frank,E.},
-        year = {2005},
-        title = {Data Mining: Practical machine learning tools and techniques},
-        publisher = {Morgan Kaufmann, San Francisco (2nd Edition)},
-        url = {http://www.cs.waikato.ac.nz/ml/weka/}
+
+@incollection{narcho-networks,
+  title={A Literature-Based Approach to a Narco-Network},
+  author={Espinal-Enr{\'\i}quez, Jes{\'u}s and Siqueiros-Garc{\'\i}a, J Mario and Garc{\'\i}a-Herrera, Rodrigo and Alcal{\'a}-Corona, Sergio Antonio},
+  booktitle={Social Informatics},
+  pages={97--101},
+  year={2014},
+  publisher={Springer}
+}
+
+@article{jrc-main,
+  title={},
+  author={Pouliquen, Bruno and Steinberger, Ralf and Ignat, Camelia and Oellinger, Tamara},
+  journal={arXiv preprint cs/0609066},
+  year={2006}
+}
+
+@article{jrc-syntactic-template,
+  title={Unsupervised learning of social networks from a multiple-source news corpus},
+  author={Tanev, Hristo},
+  journal={MuLTISOuRcE, MuLTILINguAL INfORMATION ExTRAc-TION ANd SuMMARIzATION},
+  pages={33},
+  year={2007}
+}
+
+@inproceedings{jrc-2,
+  title={Multilingual multi-document continuously-updated social networks},
+  author={Pouliquen, Bruno and Steinberger, Ralf and Belyaeva, Jenya},
+  booktitle={Proc. Workshop: Multi-source, Multilingual Information Extraction and Summarization},
+  pages={25--32},
+  year={2007}
+}
+
+@inproceedings{jrc-3,
+  title={Extracting and learning social networks out of multilingual news},
+  author={Pouliquen, Bruno and Tanev, Hristo and Atkinson, Martin},
+  booktitle={Proceedings of the Social Networks and Application tools workshop (Skalica, Slovakia, Septembe},
+  year={2008},
+  organization={Citeseer}
+}
+
+@article{google-similarity-measure,
+  title={The google similarity distance},
+  author={Cilibrasi, Rudi L and Vitanyi, Paul MB},
+  journal={Knowledge and Data Engineering, IEEE Transactions on},
+  volume={19},
+  number={3},
+  pages={370--383},
+  year={2007},
+  publisher={IEEE}
+}
+
+@article{syntactic-template,
+  title={Unsupervised learning of social networks from a multiple-source news corpus},
+  author={Tanev, Hristo},
+  journal={MuLTISOuRcE, MuLTILINguAL INfORMATION ExTRAc-TION ANd SuMMARIzATION},
+  pages={33},
+  year={2007}
+}
+
+@inproceedings{news-quotation,
+  title={Automatic detection of quotations in multilingual news},
+  author={Pouliquen, Bruno and Steinberger, Ralf and Best, Clive},
+  booktitle={Proceedings of Recent Advances in Natural Language Processing},
+  pages={487--492},
+  year={2007}
+}
+
+@article{kernel-relation-extraction,
+  title={Kernel methods for relation extraction},
+  author={Zelenko, Dmitry and Aone, Chinatsu and Richardella, Anthony},
+  journal={The Journal of Machine Learning Research},
+  volume={3},
+  pages={1083--1106},
+  year={2003},
+  publisher={JMLR. org}
+}
+
+@inproceedings{tree-kernel,
+  title={Convolution kernels for natural language},
+  author={Collins, Michael and Duffy, Nigel},
+  booktitle={Advances in neural information processing systems},
+  pages={625--632},
+  year={2001}
+}
+
+@article{fowler2006connecting,
+  title={Connecting the Congress: A study of cosponsorship networks},
+  author={Fowler, James H},
+  journal={Political Analysis},
+  volume={14},
+  number={4},
+  pages={456--487},
+  year={2006},
+  publisher={SPM-PMSAPSA}
+}
+
+@article{kirkland2011relational,
+  title={The relational determinants of legislative outcomes: Strong and weak ties between legislators},
+  author={Kirkland, Justin H},
+  journal={The Journal of Politics},
+  volume={73},
+  number={03},
+  pages={887--898},
+  year={2011},
+  publisher={Cambridge Univ Press}
+}
+
+@inproceedings{thomas2006get,
+  title={Get out the vote: Determining support or opposition from Congressional floor-debate transcripts},
+  author={Thomas, Matt and Pang, Bo and Lee, Lillian},
+  booktitle={Proceedings of the 2006 conference on empirical methods in natural language processing},
+  pages={327--335},
+  year={2006},
+  organization={Association for Computational Linguistics}
+}
+
+@article{policy-networks,
+  title={Toward the automatic extraction of policy networks using web links and documents},
+  author={Moschopoulos, Theodosis and Iosif, Elias and Demetropoulou, Leeda and Potamianos, Alexandros and Narayanan, Shrikanth Shri},
+  journal={Knowledge and Data Engineering, IEEE Transactions on},
+  volume={25},
+  number={10},
+  pages={2404--2417},
+  year={2013},
+  publisher={IEEE}
+}
+
+@inproceedings{chaudhari2014survey,
+  title={A Survey Paper on Automatic Extraction of Policy Network Using Web link and Documents},
+  author={Chaudhari, Mrs Vaishali and Kumar, J Ratanaraj},
+  booktitle={International Journal of Engineering Research and Technology},
+  volume={3},
+  number={1 (January-2014)},
+  year={2014},
+  organization={ESRSA Publications}
+}
+
+@article{kenis1991policy,
+  title={Policy networks and policy analysis: scrutinizing a new analytical toolbox},
+  author={Kenis, Patrick and Schneider, Volker and others},
+  journal={Policy networks: Empirical evidence and theoretical considerations},
+  pages={25--59},
+  year={1991},
+  publisher={Westview Press Boulder, CO}
+}
+
+@book{moran2008oxford,
+  title={The Oxford handbook of public policy},
+  author={Moran, Michael and Rein, Martin and Goodin, Robert E},
+  year={2008},
+  publisher={Oxford Handbooks Online}
+}
+
+@incollection{politician-location,
+  title={Extracting relations in social networks from the web using similarity between collective contexts},
+  author={Mori, Junichiro and Tsujishita, Takumi and Matsuo, Yutaka and Ishizuka, Mitsuru},
+  booktitle={The Semantic Web-ISWC 2006},
+  pages={487--500},
+  year={2006},
+  publisher={Springer}
+}
+
+@inproceedings{blogosphere,
+  title={Extracting information networks from the blogosphere: State-of-the-art and challenges},
+  author={Mesquita, Filipe and Merhav, Yuval and Barbosa, Denilson},
+  booktitle={Proceedings of the Fourth AAAI Conference on Weblogs and Social Media (ICWSM), Data Challenge Workshop},
+  year={2010},
+  organization={Citeseer}
 }

@@ -3,47 +3,47 @@ Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
 The top-level auxiliary file: francisco_rodriguez_drumond_mastes-thesis.aux
 The style file: plain.bst
 Database file #1: biblio.bib
-Warning--I didn't find a database entry for "section:proposal"
+Warning--can't use both volume and number fields in chaudhari2014survey
 Warning--empty title in jrc-main
-You've used 15 entries,
+You've used 20 entries,
             2118 wiz_defined-function locations,
-            589 strings with 6937 characters,
-and the built_in function-call counts, 5960 in all, are:
-= -- 610
-> -- 241
-< -- 8
-+ -- 98
-- -- 80
-* -- 394
-:= -- 926
-add.period$ -- 49
-call.type$ -- 15
-change.case$ -- 84
+            617 strings with 7968 characters,
+and the built_in function-call counts, 7986 in all, are:
+= -- 817
+> -- 331
+< -- 12
++ -- 135
+- -- 110
+* -- 520
+:= -- 1236
+add.period$ -- 67
+call.type$ -- 20
+change.case$ -- 112
 chr.to.int$ -- 0
-cite$ -- 16
-duplicate$ -- 253
-empty$ -- 486
-format.name$ -- 80
-if$ -- 1304
+cite$ -- 22
+duplicate$ -- 344
+empty$ -- 647
+format.name$ -- 110
+if$ -- 1757
 int.to.chr$ -- 0
-int.to.str$ -- 15
-missing$ -- 15
-newline$ -- 77
-num.names$ -- 30
-pop$ -- 103
+int.to.str$ -- 20
+missing$ -- 21
+newline$ -- 102
+num.names$ -- 40
+pop$ -- 144
 preamble$ -- 1
-purify$ -- 70
+purify$ -- 94
 quote$ -- 0
-skip$ -- 182
+skip$ -- 248
 stack$ -- 0
-substring$ -- 425
-swap$ -- 82
-text.length$ -- 8
+substring$ -- 540
+swap$ -- 116
+text.length$ -- 12
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 60
-warning$ -- 1
-while$ -- 62
-width$ -- 17
-write$ -- 168
+type$ -- 78
+warning$ -- 2
+while$ -- 81
+width$ -- 22
+write$ -- 225
 (There were 2 warnings)

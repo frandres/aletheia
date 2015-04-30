@@ -1,10 +1,38 @@
+
 \section{Implementation}\label{sec:implementation}
 
 In this chapter give some relevant implementation details, along with a diagram showing the pipeline of the system. \\
 
-\subsection{Modelling topics after bills }\label{subsec:topic}
+\subsection{From bills to news articles: modelling topics from bills }\label{subsec:topic}
 
-\subsection{Entity Recognition and Preprocessing}\label{subsec:getting-entities}
+In order to find entities that are related to the bills approved by a parliament, we need to find news articles that are related to the bills. To do this, we model a bill with a set of weighted keywords. These keywords can be used to query the corpus of news article and to rank the articles according to their relatedness to the bills. \\
+
+To find keywords, we consider n-grams of size \emph{1,2,3}. We compute the TF-IDF score of these n-grams with respect to the set of all bills approved by the Parliament; that is, each bill constitutes one document. To enhance the quality of the keyword extraction we could also consider the transcripts of the debates of each bill; by doing this we could discover words and phrases that describe the contents of the bills in an informal, non-legislative way which is possibly more similar to the jargon used by newspapers. This is however a minor improvement and is left for future work. After extracting keywords, we rank them and keep the top 1024 keywords. We keep the TF-IDF score of the keywords as the weight of their association. \\
+
+We used the extracted keywords to query the corpus of news articles. We index the news articles by extracting n-grams of size \emph{1,2,3} from the news articles and compute their TF-IDF score with respect to the whole set of news articles (one news article is one document). To find news articles related to the bills we compute the cosine similarity between the vectors representing the bills and the vectors representing the news articles. \\
+
+To improve the phase of keyword extraction, we use Rocchio's algorithm to discover new keywords from the corpus of news articles. Rocchio's algorithm is widely used in Information Retrieval systems to expand queries defined by users by adding news terms found in the top relevant documents retrieved by an initial search. To determine what a relevant document is there are two alternatives: (i) asking the user for feedback - an option which is not possible in our application and ii) assume that the top documents retrieved by the query are relevant. \\
+
+After defining a set of relevant documents $|R|$ and a set of non-relevant documents, we can update the query vector $q$ according to this formula: \\
+
+\begin{eqnarray*}
+%\begin{equation*} 
+q_{new} = \alpha* q +  \beta * \frac{1}{|R|} * \sum_{d \in R}{d} + \gamma * \frac{1}{|NR|} * \sum_{d \in NR}{d} \\
+%\end{equation*}
+\end{eqnarray*}
+
+Where d is a document in the Vector space model, $\alpha, \beta, \gamma $ are manually fixed parameters usually satisfying $\alpha > \beta > \gamma = 0$. \\
+
+After a new query vector is computed, we execute a new query and rank the news articles according to the new query. After doing this, we need to determine the number of articles to use based on the score. There are many alternatives to address this problem; one way is to plot the score of the articles with respect to their ranking and find an elbow. The problem with this approach is that there is no clear definition of what an elbow is and consequently the methods chosen can perform better or worse according to the plot. To address this problem we choose the point at which the derivative is below a certain threshold, which is the point at which the point ``flattens'' out. We provide an example with real data in figure \ref{fig:articles-topic-threshold}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figs/articles-topic-threshold}
+    \caption{Determining the number of articles to use for a given bill.}
+    \label{fig:articles-topic-threshold}
+\end{figure}
+
+\subsection{From news articles to political actors: entity recognition and preprocessing}\label{subsec:getting-entities}
 
 After finding articles related to bills, they are analyzed to find entities that are in turn related to the bills. For this purpose we use MITIE, a state of art tool Named Entity Recognition tool created in the MIT. Given a document, MITIE identifies substrings that contain possible named entities and tags them as \emph{Organization, Location, Person} or \emph{Miscellaneous}.\\
 

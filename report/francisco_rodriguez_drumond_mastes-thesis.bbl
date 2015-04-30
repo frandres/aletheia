@@ -7,6 +7,13 @@ Roger~B Bradford.
 \newblock In {\em Intelligence and Security Informatics}, pages 674--675.
   Springer, 2006.
 
+\bibitem{chaudhari2014survey}
+Mrs~Vaishali Chaudhari and J~Ratanaraj Kumar.
+\newblock A survey paper on automatic extraction of policy network using web
+  link and documents.
+\newblock In {\em International Journal of Engineering Research and
+  Technology}, volume~3. ESRSA Publications, 2014.
+
 \bibitem{google-similarity-measure}
 Rudi~L Cilibrasi and Paul~MB Vitanyi.
 \newblock The google similarity distance.
@@ -30,11 +37,29 @@ James~H Fowler.
 \newblock Connecting the congress: A study of cosponsorship networks.
 \newblock {\em Political Analysis}, 14(4):456--487, 2006.
 
+\bibitem{kenis1991policy}
+Patrick Kenis, Volker Schneider, et~al.
+\newblock Policy networks and policy analysis: scrutinizing a new analytical
+  toolbox.
+\newblock {\em Policy networks: Empirical evidence and theoretical
+  considerations}, pages 25--59, 1991.
+
 \bibitem{kirkland2011relational}
 Justin~H Kirkland.
 \newblock The relational determinants of legislative outcomes: Strong and weak
   ties between legislators.
 \newblock {\em The Journal of Politics}, 73(03):887--898, 2011.
+
+\bibitem{moran2008oxford}
+Michael Moran, Martin Rein, and Robert~E Goodin.
+\newblock {\em The Oxford handbook of public policy}.
+\newblock Oxford Handbooks Online, 2008.
+
+\bibitem{politician-location}
+Junichiro Mori, Takumi Tsujishita, Yutaka Matsuo, and Mitsuru Ishizuka.
+\newblock Extracting relations in social networks from the web using similarity
+  between collective contexts.
+\newblock In {\em The Semantic Web-ISWC 2006}, pages 487--500. Springer, 2006.
 
 \bibitem{policy-networks}
 Theodosis Moschopoulos, Elias Iosif, Leeda Demetropoulou, Alexandros
@@ -87,6 +112,12 @@ Matt Thomas, Bo~Pang, and Lillian Lee.
 \newblock In {\em Proceedings of the 2006 conference on empirical methods in
   natural language processing}, pages 327--335. Association for Computational
   Linguistics, 2006.
+
+\bibitem{xiang2010modeling}
+Rongjing Xiang, Jennifer Neville, and Monica Rogati.
+\newblock Modeling relationship strength in online social networks.
+\newblock In {\em Proceedings of the 19th international conference on World
+  wide web}, pages 981--990. ACM, 2010.
 
 \bibitem{kernel-relation-extraction}
 Dmitry Zelenko, Chinatsu Aone, and Anthony Richardella.

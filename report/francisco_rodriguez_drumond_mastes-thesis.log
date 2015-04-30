@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2015.4.22)  22 APR 2015 17:08
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2015.4.22)  30 APR 2015 17:28
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -518,14 +518,23 @@ Underfull \hbox (badness 10000) in paragraph at lines 13--14
 
  []
 
+
+Underfull \hbox (badness 10000) in paragraph at lines 15--16
+
+ []
+
 pdfTeX warning (ext4): destination with the same identifier (name{page.3}) has 
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.15 W
-      e aim to detect links between entities that indicate that they are bot...
-[3]
-Underfull \hbox (badness 10000) in paragraph at lines 15--16
+l.16 
+      [3]
+Underfull \hbox (badness 10000) in paragraph at lines 17--18
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 19--20
 
  []
 
@@ -595,23 +604,18 @@ Underfull \hbox (badness 10000) in paragraph at lines 27--28
 
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 29--30
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 31--32
-
- []
-
 [6]
+Underfull \hbox (badness 10000) in paragraph at lines 33--34
+
+ []
+
+
 Underfull \hbox (badness 10000) in paragraph at lines 35--36
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 37--38
+Underfull \hbox (badness 10000) in paragraph at lines 39--40
 
  []
 
@@ -620,73 +624,117 @@ Underfull \hbox (badness 10000) in paragraph at lines 41--42
 
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 43--44
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 45--46
-
- []
-
 [7]
-Underfull \hbox (badness 10000) in paragraph at lines 49--50
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 46.
+ (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 46.
+
+Underfull \hbox (badness 10000) in paragraph at lines 51--53
 
  []
 
 
-LaTeX Warning: Citation `section:proposal' on page 8 undefined on input line 51
-.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 51--52
+Underfull \hbox (badness 10000) in paragraph at lines 54--56
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 53--54
+Underfull \hbox (badness 10000) in paragraph at lines 59--60
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 55--56
-
- []
-
-) [8] (./chapters/proposal.tex) [9] (./chapters/implementation.tex
-Underfull \hbox (badness 10000) in paragraph at lines 3--4
+Underfull \hbox (badness 10000) in paragraph at lines 61--62
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 9--10
+Underfull \hbox (badness 10000) in paragraph at lines 63--64
+
+ []
+
+[8]
+Underfull \hbox (badness 10000) in paragraph at lines 65--66
+
+ []
+
+) [9] (./chapters/proposal.tex) [10] (./chapters/implementation.tex
+Underfull \hbox (badness 10000) in paragraph at lines 4--5
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 11--12
+Underfull \hbox (badness 10000) in paragraph at lines 8--9
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 13--14
+Underfull \hbox (badness 10000) in paragraph at lines 10--11
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 26--27
+Underfull \hbox (badness 10000) in paragraph at lines 12--13
 
  []
 
-) [10] (./chapters/results.tex) [11] (./chapters/conclusions.tex) [12]
+
+Underfull \hbox (badness 10000) in paragraph at lines 14--15
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 16--17
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 24--25
+
+ []
+
+<figs/articles-topic-threshold.png, id=285, 578.16pt x 433.62pt>
+File: figs/articles-topic-threshold.png Graphic file (type png)
+
+<use figs/articles-topic-threshold.png>
+Package pdftex.def Info: figs/articles-topic-threshold.png used on input line 3
+0.
+(pdftex.def)             Requested size: 348.99287pt x 261.74211pt.
+
+
+LaTeX Warning: `!h' float specifier changed to `!ht'.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 37--38
+
+ []
+
+[11]
+Underfull \hbox (badness 10000) in paragraph at lines 39--40
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 41--42
+
+ []
+
+[12 <./figs/articles-topic-threshold.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 54--55
+
+ []
+
+) [13] (./chapters/results.tex) [14] (./chapters/conclusions.tex) [15]
 (./francisco_rodriguez_drumond_mastes-thesis.bbl
-Underfull \hbox (badness 2418) in paragraph at lines 40--46
+Underfull \hbox (badness 2418) in paragraph at lines 65--71
 []\OT1/cmr/m/n/10.95 Theodosis Moschopou-los, Elias Iosif, Leeda Demetropoulou,
  Alexan-dros Potami-anos, and
  []
 
-) [13]
+[16]) [17]
 Package atveryend Info: Empty hook `BeforeClearDocument' on input line 66.
  [1]
 Package atveryend Info: Empty hook `AfterLastShipout' on input line 66.
@@ -695,36 +743,37 @@ Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 66.
 Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 66.
 Package rerunfilecheck Info: File `francisco_rodriguez_drumond_mastes-thesis.ou
 t' has not changed.
-(rerunfilecheck)             Checksum: 9A3287393021EE02AC3851A8F33A6D6D;1176.
-
-
-LaTeX Warning: There were undefined references.
-
+(rerunfilecheck)             Checksum: 1E04AD621BF3E696049D9E2D53CA08CC;1253.
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 66.
  ) 
 Here is how much of TeX's memory you used:
- 6664 strings out of 493304
- 95610 string characters out of 6139871
- 187794 words of memory out of 5000000
- 9929 multiletter control sequences out of 15000+600000
- 13107 words of font info for 50 fonts, out of 8000000 for 9000
+ 6707 strings out of 493304
+ 96390 string characters out of 6139871
+ 188154 words of memory out of 5000000
+ 9955 multiletter control sequences out of 15000+600000
+ 13466 words of font info for 51 fonts, out of 8000000 for 9000
  957 hyphenation exceptions out of 8191
- 36i,14n,45p,1242b,461s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 36i,14n,45p,1908b,461s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></us
 r/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/shar
-e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texli
-ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/ty
-pe1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
-ic/amsfonts/cm/cmr9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfo
-nts/cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmtt9.pfb>
-Output written on francisco_rodriguez_drumond_mastes-thesis.pdf (19 pages, 4157
-27 bytes).
+e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbxti10.pfb></usr/share/te
+xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/
+texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/typ
+e1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmr17.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsf
+onts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/
+cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb
+></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr
+/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/
+texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texliv
+e/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
+Output written on francisco_rodriguez_drumond_mastes-thesis.pdf (23 pages, 4899
+78 bytes).
 PDF statistics:
- 339 PDF objects out of 1000 (max. 8388607)
- 279 compressed objects within 3 object streams
- 52 named destinations out of 1000 (max. 500000)
- 169 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 399 PDF objects out of 1000 (max. 8388607)
+ 326 compressed objects within 4 object streams
+ 62 named destinations out of 1000 (max. 500000)
+ 174 words of extra memory for PDF output out of 10000 (max. 10000000)
 
