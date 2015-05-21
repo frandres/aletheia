@@ -239,89 +239,93 @@ def document2keywords(elasticsearch_results):
 
     return document_keywords
 
-     
-conn = MongoClient()
-db = conn.catalan_bills
+def main():
+    conn = MongoClient()
+    db = conn.catalan_bills
 
-bills = []
-for bill in db.bills.find():
-    bills.append(bill)
+    bills = []
+#for bill in db.bills.find():
+    for bill in db.bills.find():
+        if bill['id'] != '00062014' and int(bill['year'])>=2014:
+            bills.append(bill)
 
-for bill in bills:
+    print ('Processing: {}'.format(len(bills)))
+    for bill in bills:
 
-    original_keywords = bill['keywords']
-    #print bill['text'][0:1000].encode('utf8')
-    #print bill['keywords']
+        original_keywords = bill['keywords']
+        #print bill['text'][0:1000].encode('utf8')
+        #print bill['keywords']
 
-   
-    # Get rocchio's keywords.
+       
+        # Get rocchio's keywords.
 
-    rocchio_kws = get_rocchio_keywords(original_keywords)
+        rocchio_kws = get_rocchio_keywords(original_keywords)
 
-    # Store them in Mongo.
-    
-    db.bills.update({'id':bill['id']},{'$set':{'rocchio_keywords':rocchio_kws}})
-
-
-    # Execute the new query.
-
-    query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':kw,'boost':weight,'analyzer':'analyzer_keywords'}}} for [kw,weight] in rocchio_kws[0:10]]}}}
-
-    print 'Searching'
-    es = Elasticsearch(timeout=100)
-
-    results = es.search(index="catnews_spanish", explain = True, body=query,search_type = 'dfs_query_then_fetch',size =3000,sort='_score:desc,_id:desc')
-
-    document_keywords = document2keywords(results)
-
-    articles = [(x['_source']['body'],x['_score'],x['_id']) for x in results['hits']['hits']]
-
-    num_articles = find_cutting_point([(y,_id) for (_,y,_id) in articles])
-
-    print('Bill: {}'.format(bill['id']))
-
-    print(' Found {} relevant articles'.format(num_articles))
-
-    print(' Finding entities')
-    entities = article2entities(articles[0:num_articles],'catnews_spanish')
-    print(' Found {} entities'.format(len(entities)))
+        # Store them in Mongo.
         
-    print(' Inserting entities')
-    entities = insert_entities(entities,db.entities,bill['id'])
-
-    print(' Relating entities with bills')
-    relate_entities_bills(entities,db.entities_bills,bill['id'])
-
-    print(' Relating entities with documents')
-    relate_entities_documents(entities,db.entities_documents,bill['id'])
-
-    print(' Relating entities with keywords')
-    relate_entities_keywords(entities,db.entities_keywords,document_keywords,bill['id'])
-    '''
-
-    print len(ranking)
-    plt.plot(range(len(ranking)),[x[1] for x in ranking])
-    plt.savefig('./results/'+bill['id']+'_entities_weights.png')
-    plt.clf()
-    original_keywords = [x for (x,y) in original_keywords]
+        db.bills.update({'id':bill['id']},{'$set':{'rocchio_keywords':rocchio_kws}})
 
 
+        # Execute the new query.
 
-    with open('./results/'+bill['id']+'_summary.txt', 'w') as f:
-        f.write(bill['text'][0:500].encode('utf8')+'\n\n')
-        f.write('\n----------------- ROCCHIO FOUND -----------------\n\n')
+        query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':kw,'boost':weight,'analyzer':'analyzer_keywords'}}} for [kw,weight] in rocchio_kws[0:10]]}}}
+
+        print 'Searching'
+        es = Elasticsearch(timeout=100)
+
+        results = es.search(index="catnews_spanish", explain = True, body=query,search_type = 'dfs_query_then_fetch',size =3000,sort='_score:desc,_id:desc')
+
+        document_keywords = document2keywords(results)
+
+        articles = [(x['_source']['body'],x['_score'],x['_id']) for x in results['hits']['hits']]
+
+        num_articles = find_cutting_point([(y,_id) for (_,y,_id) in articles])
+
+        print('Bill: {}'.format(bill['id']))
+
+        print(' Found {} relevant articles'.format(num_articles))
+
+        print(' Finding entities')
+        entities = article2entities(articles[0:num_articles],'catnews_spanish')
+        print(' Found {} entities'.format(len(entities)))
+            
+        print(' Inserting entities')
+        entities = insert_entities(entities,db.entities,bill['id'])
+
+        print(' Relating entities with bills')
+        relate_entities_bills(entities,db.entities_bills,bill['id'])
+
+        print(' Relating entities with documents')
+        relate_entities_documents(entities,db.entities_documents,bill['id'])
+
+        print(' Relating entities with keywords')
+        relate_entities_keywords(entities,db.entities_keywords,document_keywords,bill['id'])
+        '''
+
+        print len(ranking)
+        plt.plot(range(len(ranking)),[x[1] for x in ranking])
+        plt.savefig('./results/'+bill['id']+'_entities_weights.png')
+        plt.clf()
+        original_keywords = [x for (x,y) in original_keywords]
 
 
-        i = 0
-        for (weight, kw) in rocchio_kws[0:1024]:
-            (weight,kw) = rocchio_kws[i]
-            if kw not in original_keywords:
-                f.write(kw.encode('utf8')+ ' with weight: '+ str(weight) + ' and ranking ' + str(i)+'\n')
-            i+=1
 
-        i = 0
-        f.write('\n----------------- ENTITIES FOUND -----------------\n\n')
-        for (entity,weight) in ranking:
-            f.write(entity+ ' with weight: '+ str(weight) + ' and ranking ' + str(i)+'\n')
-            i+=1
-    '''
+        with open('./results/'+bill['id']+'_summary.txt', 'w') as f:
+            f.write(bill['text'][0:500].encode('utf8')+'\n\n')
+            f.write('\n----------------- ROCCHIO FOUND -----------------\n\n')
+
+
+            i = 0
+            for (weight, kw) in rocchio_kws[0:1024]:
+                (weight,kw) = rocchio_kws[i]
+                if kw not in original_keywords:
+                    f.write(kw.encode('utf8')+ ' with weight: '+ str(weight) + ' and ranking ' + str(i)+'\n')
+                i+=1
+
+            i = 0
+            f.write('\n----------------- ENTITIES FOUND -----------------\n\n')
+            for (entity,weight) in ranking:
+                f.write(entity+ ' with weight: '+ str(weight) + ' and ranking ' + str(i)+'\n')
+                i+=1
+        '''
+main()

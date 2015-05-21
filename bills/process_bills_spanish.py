@@ -103,6 +103,19 @@ def process_docs(folder,db):
     doc_to_keywords = {}
     for doc_name in doc_names:
         print i
+        if db.bills.find({'id':docs[doc_name]['id']}).count() >0:
+            print 'Done'
+            i+=1
+            continue
+
+        if docs[doc_name]['year'] == '' or int(docs[doc_name]['year'])<2004:
+            print 'Skipping because of the year'
+            i+=1
+            continue
+
+        print 'Analyzing: {}'.format(docs[doc_name]['year'])
+
+
         values = t.todense()[i,:].tolist()[0]
         all_tokens = zip(values,range(len(values)))
         l = [(x,y) for (x,y) in all_tokens if x>0]

@@ -14,7 +14,6 @@ def merge_entities(e1,query,collection, drop= False):
     
     # Merge bills:
 
-
     if 'bills'in e2.keys():
         e2_bills = e2['bills']
     else:
@@ -58,5 +57,5 @@ def merge_entities(e1,query,collection, drop= False):
     collection.update(query,{'$set':{'bills':e2_bills,'aliases':e2_aliases,'tags':e2_tags,'tag':tag}})
 
     if drop:
-        entities_db.remove({'name': e1['name']})
+        collection.remove({'name': e1['name']})
 

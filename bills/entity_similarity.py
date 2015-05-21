@@ -4,6 +4,9 @@ from pymongo import MongoClient
 import math
 from collections import defaultdict
 import cPickle as pickle
+from bisect import bisect_left
+import os.path
+
 '''
 From the entities_documents collection in MongoDB generate 
  + A binary entity/document matrix (corpus) (1 iff the entity occurs in the document) 
@@ -13,7 +16,9 @@ From the entities_documents collection in MongoDB generate
 
 These are return as a triplet (corpus,col2doc,row2entity)
 '''
-def ent_doc2corpus():
+def ent_doc2corpus(fname='ent_document_corpus.pkl'):
+    if os.path.isfile(fname):
+        return pickle.load(open(fname,'rb'))
     conn = MongoClient()
     ent_col = conn.catalan_bills.entities
     entities = []
@@ -51,7 +56,9 @@ def ent_doc2corpus():
                 max_id +=1
         corpus.append(ent_vector)
 
-    return (corpus,col2doc,row2entity)
+    obj = (corpus,col2doc,row2entity)
+    pickle.dump(obj,open('ent_document_corpus.pkl', 'wb'),-1)
+    return obj
 
 
 '''
@@ -64,7 +71,9 @@ From the entities_keyword collection in MongoDB generate
 
 These are return as a triplet (corpus,col2keyword,row2entity)
 '''
-def ent_keyword2corpus():
+def ent_keyword2corpus(fname='ent_keyword_corpus.pkl'):
+    if os.path.isfile(fname):
+        return pickle.load(open(fname,'rb'))
     conn = MongoClient()
     ent_col = conn.catalan_bills.entities
     entities = []
@@ -83,12 +92,10 @@ def ent_keyword2corpus():
     for entity in entities:
         row2entity[row_id] = entity['name']
         row_id+=1
-        print '{}: {} out of {}'.format(entity['name'],row_id,len(entities))  
+        print '{} out of {}'.format(row_id,len(entities))  
         ent_kws = ent_kw_col.find({'entity':entity['_id']})
         kws = defaultdict(lambda: 0)
-
         for ent_kw in ent_kws:
-            print ent_kw
             keyword = ent_kw['keyword']
 	      
     	    if keyword not in keyword2col: 
@@ -100,7 +107,9 @@ def ent_keyword2corpus():
 
         corpus.append(kws.items())
 
-    return (corpus,col2keyword,row2entity)
+    obj = (corpus,col2keyword,row2entity)
+    pickle.dump(obj,open('ent_keyword_corpus.pkl', 'wb'),-1)
+    return obj
 
 '''
 From the entities_bill collection in MongoDB generate 
@@ -111,7 +120,10 @@ From the entities_bill collection in MongoDB generate
 
 These are return as a triplet (corpus,col2keyword,row2entity)
 '''
-def ent_bill2corpus():
+def ent_bill2corpus(fname = 'ent_bill_corpus.pkl'):
+    if os.path.isfile(fname):
+        return pickle.load(open(fname,'rb'))
+
     conn = MongoClient()
     ent_col = conn.catalan_bills.entities
     entities = []
@@ -130,7 +142,7 @@ def ent_bill2corpus():
     for entity in entities:
         row2entity[row_id] = entity['name']
         row_id+=1
-        print '{}: {} out of {}'.format(entity['name'],row_id,len(entities))  
+        print '{} out of {}'.format(row_id,len(entities))  
         ent_bills = ent_bills_col.find({'entity':entity['_id']})
         ent_topics_vector = defaultdict(lambda: 0)
 
@@ -141,13 +153,14 @@ def ent_bill2corpus():
                 col2bill[max_id] = bill
                 max_id+=1
 
-            print ent_bill['weight']['articles']
             for article_occurrence in ent_bill['weight']['articles']:
                 ent_topics_vector[bill2col[bill]]+= math.log(1+article_occurrence['article_weight']) * math.log(1+article_occurrence['frequency'])
             
         corpus.append(ent_topics_vector.items())
-
-    return (corpus,col2bill,row2entity)
+        
+    obj = (corpus,col2bill,row2entity)
+    pickle.dump(obj,open('ent_bill_corpus.pkl', 'wb'),-1)
+    return obj
 
 
 def get_test_corpus():
@@ -161,12 +174,45 @@ def get_test_corpus():
             [(9, 1.0), (10, 1.0), (11, 1.0)],
             [(8, 1.0), (10, 1.0), (11, 1.0)]]
 
+def are_comparable_entities(e1,e2,bill2comparable):
+    for comparable_entities in bill2comparable.values():
+        i1 = bisect_left(comparable_entities,e1)
+        i2 = bisect_left(comparable_entities,e2)
+        if i1 != len(comparable_entities) and comparable_entities[i1] == e1 and i2 != len(comparable_entities) and comparable_entities[i2] == e2:
+            return True
 
-pickle.dump(ent_bill2corpus(),open('ent_bill_corpus.pkl', 'wb'),-1)
-pickle.dump(ent_keyword2corpus(),open('ent_bill_keywords.pkl', 'wb'),-1)
-pickle.dump(ent_doc2corpus(),open('ent_bill_documents.pkl', 'wb'),-1)
-'''
-id2word = {0:'a',1:'b',2:'c',3:'de',4:'a',5:'b',6:'c',7:'a',8:'b',9:'c',10:'a',11:'b'}
-lsi = LsiModel(corpus=corpus,id2word=id2word, num_topics=2)
-print lsi.print_topics(2)
-'''
+    return False
+                                    
+def get_bill2comparable(db):
+    bill2cb = {}
+    for x in db.bill_comparable_entities.find():
+        bill2cb[x['bill']] = x['entities']
+    return bill2cb
+
+def get_comparable_entities(db):
+    comparable_entities = {}
+    for x in db.comparable_entities.find():
+        comparable_entities[x['entity']]= x['comparable_entities']
+    return comparable_entities
+
+def main():
+    conn = MongoClient()
+    db = conn.catalan_bills
+    #bill2ce = get_bill2comparable(db)
+
+    #print are_comparable_entities('Accion Por El Clima','Actos Juridicos Documentados',bill2ce)
+   
+    #print 'Bill 2 corpus' 
+    #corpus = ent_bill2corpus()
+
+    print 'Keyword 2 corpus' 
+    (corpus,col2word,row2entity) = ent_keyword2corpus()
+    print corpus[0:10]
+    #print 'Document 2 corpus' 
+    #corpus = ent_doc2corpus()
+    print len(corpus)
+    lsi = LsiModel(corpus=corpus,id2word=col2word, num_topics=40)
+    index = similarities.MatrixSimilarity(lsi[corpus])
+    print index[lsi[corpus[0]]][0]
+
+main()

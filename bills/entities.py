@@ -35,13 +35,15 @@ def get_entities_mit(body,index):
     entities = merge_initials(entities,tokens)
     entities = merge_names(entities)
     entities = complete_names(entities, tokens,index)
-
     entities_dict = {}
     
     # Build the dictionary.
     for entity in entities:
         if entity['name'] == '':
             continue
+        
+        if entity['name'] not in entity['aliases']:
+            entity['aliases'].append(entity['name'])
 
         name = entity['name']
         if name not in entities_dict:
@@ -161,7 +163,7 @@ def merge_names(entities):
                             full_person['aliases'].append(entity['name'])
                             break
                         else:
-                            #pass
+                            pass
                             #print('ALIASES: {} FOUND: {} already there'.format(entity['name'],full_person['name']))
                 if not found_whole_name:
                     new_entities.append(entity)
