@@ -16,14 +16,12 @@ To improve the phase of keyword extraction, we use Rocchio's algorithm to discov
 After defining a set of relevant documents $|R|$ and a set of non-relevant documents, we can update the query vector $q$ according to this formula: \\
 
 \begin{eqnarray*}
-%\begin{equation*} 
 q_{new} = \alpha* q +  \beta * \frac{1}{|R|} * \sum_{d \in R}{d} + \gamma * \frac{1}{|NR|} * \sum_{d \in NR}{d} \\
-%\end{equation*}
 \end{eqnarray*}
 
 Where d is a document in the Vector space model, $\alpha, \beta, \gamma $ are manually fixed parameters usually satisfying $\alpha > \beta > \gamma = 0$. \\
 
-After a new query vector is computed, we execute a new query and rank the news articles according to the new query. After doing this, we need to determine the number of articles to use based on the score. There are many alternatives to address this problem; one way is to plot the score of the articles with respect to their ranking and find an elbow. The problem with this approach is that there is no clear definition of what an elbow is and consequently the methods chosen can perform better or worse according to the plot. To address this problem we choose the point at which the derivative is below a certain threshold, which is the point at which the point ``flattens'' out. We provide an example with real data in figure \ref{fig:articles-topic-threshold}
+After a new query vector is computed, we execute a new query and rank the news articles according to the new query. After doing this, we need to determine the number of articles to use based on the score. There are many alternatives to address this problem; one way is to plot the score of the articles with respect to their ranking and find an elbow. The problem with this approach is that there is no clear definition of what an elbow is and consequently the methods chosen can perform better or worse according to the plot. To address this problem we choose the point at which the derivative is below a certain threshold, which is the point at which the curve ``flattens'' out. We provide an example with real data in figure \ref{fig:articles-topic-threshold}. \\
 
 \begin{figure}[h!]
     \centering
@@ -53,4 +51,28 @@ Name disambiguation is in itself a complex and interesting research topic which 
 
 By doing this we find a list of entities for which we have a list of aliases and a list of tags counts. After doing this, we choose for every entity the tag with the highest frequency as the type of the entity. \\
 
+\subsection{Selecting relevant actors: scoring the relationship between an entity and a bill}\label{subsec:entity-bill-score}
+
+After obtaining a list of entities for each bill, we need to measure the strength of the relationship between the entities and the topics. Our method for entity selection yields thousands of entities for each of the topics. This makes scoring the strength of the relationship necessary for two reasons.\\ 
+
+First, noise is bound to be present in the list of entities found by our system. This includes entity names that do no correspond to real entities, entities that occur in articles related to the bills but that are not really related to them and entities from articles that are completely unrelated to the bills. By ranking the entities according to their relationship to the topics we can automatically or semi-automatically select the most relevant entities, thus performing noise reduction. \\
+
+Second, to produce an entity-entity graph we need to compute similarity measures between each pair entities; the cost of each comparison depends on the method chosen and growths quadratically with the number of entities. This is particularly relevant if we want to use similarity measures based on a Web search engine. \\
+
+To weight the relationship between an entity and a bill we have proposed a measure which takes into account three factors: the relationship between the article the entity occurs in and a bill; the frequency of an entity in that article and the frequency of an entity across the whole set of topics. Our measure follows the intuition of the TF-IDF weighting scheme: we want to give a high score to entities that occur frequently in articles highly related to bills and at the same time give lower scores to entities that occur in more than one topic. More formally we weight the relationship between an entity and a bill according to the following formula:
+
+
+\begin{eqnarray*}
+weight(e,t) = \sum_{\substack{n \in news(t), \\e \in n}}{\Big(\underbrace{log(cos\_similarity(n,t))}_{\text{news-topic similarity}}*\underbrace{log(freq(e,n))}_{\text{frequency of the entity in the article}}} \Big) * \underbrace{itf(e)}_{\text{inverse topic frequency}}\\
+\end{eqnarray*}
+
+Where $e$ denotes an entity, $t$ denotes a topic (modelled by a bill), $n$ denotes a news article, $news(t)$ denotes the set of news articles related to the topic as outlined in \ref{subsec:topic} and:
+
+\begin{itemize}
+\item The news-topic similarity is scored by the cosine similarity of the topic (modeled by the set of keywords with their corresponding weights) and the news article, represented in the vector space model.
+\item The frequency of the entity in a news article is the number of times the entity or its aliases occurs in the article.
+\item The inverse topic frequency is a quantity analogous to the idf term in the tf-idf scheme and is formally defined as: $$itf(e) = log(\frac{\left\vert{T}\right\vert}{\vert \{t \in T \vert e  \in T\} \vert })$$ where $e$ represents an entity, $T$ is the set of all topics, $t$ represents a topic and $e \in t$ means that there is at least one news article related to the topic such that $e$ occurs in it.
+\end{itemize}
+
+By computing the weight of the relationship between an actor and a bill, we can rank them and choose the most relevant entities either semi-automatically and automatically. In a semi-automatic process an expert could revise the ranked entities, select the most relevant ones and if necessary perform a disambiguation process. However, we can look at the distribution of the weights and automatically choose a threshold to determine the most relevant entities. Figure (TODO) shows a representative example of the behavior of the weight as a function of rank; we see that as in the case of figure \ref{fig:articles-topic-threshold} the curve flattens after a certain point. Based on this, we use the same method as in \ref{subsec:topic}:  we choose the point at which the derivative is below a certain threshold, which is the point at which the curve ``flattens'' out. 
 
