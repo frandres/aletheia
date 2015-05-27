@@ -14,6 +14,18 @@ from nltk.tokenize import sent_tokenize
 from nltk.stem import SnowballStemmer
 from math import log,sqrt
 
+def camelize(string):
+    to_upper_case = True
+    new_string = ''
+    for x in string:
+        if to_upper_case:
+            new_string+=x.upper()
+        else:
+            new_string+=x.lower()
+
+        to_upper_case = x == ' '
+    return new_string
+
 '''
 Given a sentence, return 1,2,3-grams and do stemming and stopword removal
 '''
@@ -38,17 +50,25 @@ def sentence2ngrams(sentence, max_size = 2):
 def get_key(item):
     return item[0]
 
+def get_entity_documents(entity,index):
+    name = entity['name']
+    q = {'query': {'bool': {'disable_coord': True, 'must': [{'match_phrase': {'body': {'analyzer': 'analyzer_shingle', 'query': name}}}]}}}
+    es = Elasticsearch(timeout=30000)
+    results = es.search(index=index, body=q, explain = True, size = 3000)['hits']['hits']
+    for result in results:
+        print result
+
+
 '''
 Given a name, look it up in the index and return a dictionary containing keywords occurring in the sentences, along with their TF-IDF value
 '''
 def get_entity_keywords(name,aliases,index,min_freq=2):
-
-    
+  
     q = {'query': {'bool': {'disable_coord': True, 'must': [{'match_phrase': {'body': {'analyzer': 'analyzer_shingle', 'query': name}}}]}}}
-    es = Elasticsearch(timeout=300)
+    es = Elasticsearch(timeout=30000)
     N = es.count(index = 'catnews_spanish')['count']
 
-    results = es.search(index=index, body=q, explain = True, size = 3000,search_type = 'dfs_query_then_fetch')['hits']['hits']
+    results = es.search(index=index, body=q, explain = True, size = 3000)['hits']['hits']
     n_grams = {}
 
     if name not in aliases:
@@ -84,17 +104,9 @@ def get_entity_keywords(name,aliases,index,min_freq=2):
 
 def get_entities_keywords(db,bill_id, index,num_threads = 10):
 
-    entity_weight = []
-    for eb in db.entities_bills.find({'bill':bill_id}):
-        entity = db.entities.find_one({'_id':eb['entity']})
-        if entity is not None:
-            entity_weight.append(((eb['adjusted_weight'],eb['name']),entity))
+    entities = [db.entities.find_one({'_id':e_id}) for e_id in db.bills.find_one({'id':bill_id})['relevant_entities']]
 
-    entity_weight.sort(reverse=True,key=get_key)
-    num_entities = find_cutting_point([ew[0] for ew in entity_weight],bill_id)
-
-    print num_entities
-    entities = [e[1] for e in entity_weight[0:num_entities] if e[1] is not None and 'keywords'not in e[1]]
+    entities = [e for e in entities if 'keywords' not in e]
 
     print len(entities)
     processes = []
@@ -118,28 +130,7 @@ def get_entities_keywords_process(entities, index,collection):
         collection.update({'_id':entity['_id']},{'$set':{'keywords':kws}})
         print 'keywords' in collection.find_one({'_id':entity['_id']})
 
-def compute_total_google_count(db,bill_id):
 
-    ees= [ee for ee in db.entity_entity.find({'bill_id':bill_id})]
-    entities = []
-    for ee in ees:
-        if ee['e1_id'] not in entities:
-            entities.append(ee['e1_id'])
-        if ee['e2_id'] not in entities:
-            entities.append(ee['e2_id'])
-
-    print len(entities)
-
-    for e in entities:
-        count = 0
-        for ee in db.entity_entity.find({'bill_id':bill_id,'e1_id':e}):
-            count += ee['google_count']
-            
-        for ee in db.entity_entity.find({'bill_id':bill_id,'e2_id':e}):
-            count += ee['google_count']
-
-        db.entities.update({'_id':e},{'$unset':{'google_count':1}})
-        db.entities.update({'_id':e},{'$set':{'google_count':{bill_id:count}}})
 '''
 Fetch all entities from the Database, 
 compute the most frequent tag,
@@ -237,141 +228,21 @@ def remove_entities_with_low_frequency(db,min_freq=3):
             #collection.remove({'name': entity['name']})
     print i
 
-
-def find_comparable_entities(db):
-
-    eb_col = db.entities_bills
-    e_col = db.entities
-    entity_bills = defaultdict(lambda: [])
-
-    for eb in eb_col.find():
-        try:
-            entity = e_col.find({'_id':eb['entity']})[0]
-        except Exception:
-            continue
-        if entity['tag'] != 'LOCATION':
-            entity_bills[eb['bill']].append(entity['name'])
-
-    c= 0 
-    for (key,value) in entity_bills.items():
-        print 'Bill: {} has {} entities, which make {} possible links'.format(key,len(value),len(value)**2)
-        c+= len(value)**2
-    print c
-    '''
-    entity_entity = defaultdict(lambda:[])
-    
-    bill_comparable_entities = db.bill_comparable_entities
-
-    for (key,value) in entity_bills.items():
-        print 'Bill: {}'.format(key)
-        value.sort()
-        print ' GO: {}'.format(len(value))
-        #bill_comparable_entities.insert({'bill':key,'entities':value})
-        for i in range(0,len(value)-1):
-            print i
-            for j in range(i+1,len(value)):
-                if value[j] not in entity_entity[value[i]]:
-                    entity_entity[value[i]].append(value[j])
-    '''
-        
-    comparable_entities = db.comparable_entities
-    
-    for (key,value) in entity_entity:
-        comparable_entities.insert({'entity':key,'comparable_entities':value})    
-
-def cosine_similarity_keywords(e1ks,e2ks):    
-
-    e1_i = 0
-    e2_i = 0
-
-    product = 0
-    norm_e1 = 0
-    norm_e2 = 0
-
-    e1k = ('',0)
-    e2k = ('',0)
-    while e1_i < (len(e1ks)) or (e2_i<len(e2ks)):
-#    print e1_i < (len(e1ks) -1) or (e2_i<len(e2ks)-1)
-#    print e1_i, len(e1ks) -1, e1_i < (len(e1ks) -1)
-#    print e2_i, len(e2ks)-1, (e2_i<len(e2ks)-1)
-#    print ''
-        
-        if e1_i < len(e1ks):
-            e1k = e1ks[e1_i]
-            
-        if e2_i < len(e2ks):
-            e2k = e2ks[e2_i]
-
-        if e1k[0] == e2k[0]:
-            print 'TRUE'
-            product+= e1k[1] * e2k[1]
-
-            if e1_i< len(e1ks):
-                norm_e1 += e1k[1] * e1k[1]
-                e1_i+=1
-
-            if e2_i< len(e2ks):
-                norm_e2 += e2k[1] * e2k[1]
-                e2_i+=1
-
-        if e1k[0] < e2k[0] or e2_i == len(e2ks):
-            if e1_i< len(e1ks):
-                norm_e1 += e1k[1] * e1k[1]
-                e1_i+=1
-        if e1k[0] > e2k[0] or e1_i == len(e1ks):
-            if e2_i< len(e2ks):
-                norm_e2 += e2k[1] * e2k[1]
-                e2_i+=1
-
-
-    norm_e1 = sqrt(norm_e1)            
-    norm_e2 = sqrt(norm_e2)            
-
-     
-    if product >0:
-        product = product/(norm_e1*norm_e2)   
-
-    return product
-def calculate_metrics_ee(db,bill_id,e_e):
-    e1 = db.entities.find_one({'_id':e_e['e1_id']})
-    if 'google_count' in e1:
-        e1_count = e1['google_count'][bill_id] +1
-    else:
-        return None
-
-    e2 = db.entities.find_one({'_id':e_e['e2_id']})
-    if 'google_count' in e2:
-        e2_count = e2['google_count'][bill_id] +1
-    else:
-        return None
-
-    metrics = {}
-    metrics['google_mutual_information'] = log((e_e['google_count']+1)/(e1_count*e2_count))
-    metrics['google_dice'] = (2*(e_e['google_count']+1)/(e1_count+e2_count))
-    metrics['google_jaccard'] = ((e_e['google_count']+1)/(e1_count+e2_count-e_e['google_count']+1))
-
-    # Cosine similarity
-    e1ks = e1['keywords'].items() 
-    e1ks.sort()
-     
-    e1ks = e1['keywords'].items() 
-    e2ks.sort()
-
-    metrics['cosine_similarity_keywords'] = cosine_similarity_keywords(e1ks,e2ks)   
-
-    return metrics
-
-def find_cutting_point(scores, bill_id,epsilon = 0.001,window_size = 50):
+def find_cutting_point(scores, bill_id, plot = True, epsilon = 0.2,window_size = 60):
     for i in range(50,len(scores)):
         slope = abs(float(scores[i][0]-scores[i-window_size][0])/(window_size))
         if slope<epsilon:
-            plt.plot(range(len(scores)),[score for (score,_) in scores])
-            plt.plot(i, scores[i][0], 'ro')
-            plt.savefig('./plots_entities_bills/'+bill_id+'.png')
-            plt.clf()
+            if plot:
+                plt.plot(range(len(scores)),[score for (score,_) in scores])
+                plt.plot(i, scores[i][0], 'ro')
+                plt.savefig('./results/article_weight/'+bill_id+'.png')
+                plt.clf()
             return i
-
-def calculate_metrics(db,bill_id):
+def compute_relevant_entities_for_bill(db,bill_id):
+    print len([eb['entity'] for eb in db.entities_bills.find({'bill':bill_id})])
+    db.bills.update({'id':bill_id},{'$set':{'relevant_entities':[eb['entity'] for eb in db.entities_bills.find({'bill':bill_id})]}})
+'''
+def compute_relevant_entities_for_bill(db,bill_id):
     entity_weight = []
     for eb in db.entities_bills.find({'bill':bill_id}):
         entity = db.entities.find_one({'_id':eb['entity']})
@@ -382,43 +253,41 @@ def calculate_metrics(db,bill_id):
     num_entities = find_cutting_point([ew[0] for ew in entity_weight],bill_id)
     entities = [ew[1] for ew in entity_weight[0:num_entities]]
 
-    for i in range(0,len(entities)-1): 
-        e1 = entities[i]
-        for j in range(i+1,len(entities)):
-            e2 = entities[j]
-            e_e = db.entity_entity.find_one({'e1_id':e1['_id'], 'e2_id':e2['_id']})
-            if e_e is None:
-                raise Exception('entity-entity relation is null, e1:{} and e2:{}'.format(e1['name'],e2['name']))
-            metrics = calculate_metrics_ee(db,bill_id,e_e)
-            for (metric,value) in metrics.items():
-                db.entity_entity.update({'_id':e_e['_id']},{'$set':{metric:value}})
-            
+    bill = db.bills.find_one({'id':bill_id})
+
+    if 'relevant_entities' in bill:
+        existing_entities =bill['relevant_entities']
+    else:
+        existing_entities = []
+
+    existing_entities = []
+    for entity in entities:
+        if entity['_id'] not in existing_entities:
+            existing_entities.append(entity['_id'])
+
+    for politician in db.politicians_bills.find({'bill':bill_id}):
+        if politician['entity_id'] not in existing_entities:
+            existing_entities.append(politician['entity_id'])
+    print len(existing_entities)
+    db.bills.update({'id':bill_id},{'$set':{'relevant_entities':existing_entities}})
+'''           
 def postprocess_entities():
     conn = MongoClient()
     db = conn.catalan_bills
+    index = 'catnews_spanish'
     print 'Setting main tag'
     #set_main_tag(db.entities)
     print 'Normalizing locations'
     #normalize_locations(db.entities)
-    print 'Finding comparable entities'
-    #find_comparable_entities(db)
     print 'Computing IDF'
+    bill_id = '00152014'
+    bill_id = '00062014'
     #compute_entity_idf_and_adjusted_weight(db)
-    get_entities_keywords(db,'00062014', 'catnews_spanish')
+    #compute_relevant_entities_for_bill(db,bill_id)
+    print 'Getting keywords'
+    #get_entities_keywords(db,bill_id, 'catnews_spanish')
     #remove_entities_with_low_frequency(db)
-    #compute_total_google_count(db,'00062014')
-    #calculate_metrics(db,'00062014')
+    get_entity_documents(db.entities.find_one(),index)
 
-def camelize(string):
-    to_upper_case = True
-    new_string = ''
-    for x in string:
-        if to_upper_case:
-            new_string+=x.upper()
-        else:
-            new_string+=x.lower()
-
-        to_upper_case = x == ' '
-    return new_string
-
+    
 postprocess_entities()
