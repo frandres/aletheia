@@ -76,22 +76,99 @@ def cosine_similarity_keywords(e1ks,e2ks):
         product = product/(norm_e1*norm_e2)   
     return product
     
-def calculate_metrics_ee(db,bill_id,e_e):
-    e1 = db.entities.find_one({'_id':e_e['e1_id']})
-    if 'google_count' in e1:
-        e1_count = float(e1['google_count'][bill_id])
-    else:
-        raise Exception('Count not computed for {}.'.format(e1['name']))
+def intersection(l1,l2):
+    count = 0
+    i1 = 0
+    i2 = 0
+    if len(l1) == 0 or len(l2) == 0:
+        return 0
+    while i1<len(l1) or i2<len(l2):
 
-    e2 = db.entities.find_one({'_id':e_e['e2_id']})
-    if 'google_count' in e2:
-        e2_count = e2['google_count'][bill_id] 
+            
+        if i1 < len(l1):
+            w1 = l1[i1]
+            
+        if i2 < len(l2):
+            w2 = l2[i2]
+
+        if w1 == w2:
+            count+=1
+
+            if i1<len(l1):
+                i1+=1
+            if i2<len(l2):
+                i2+=1
+
+        if w1 < w2 or i2 == len(l2):
+            if i1<len(l1):
+                i1+=1
+
+        if w2 < w1 or i1 == len(l1):
+            if i2<len(l2):
+                i2+=1
+    return count
+
+def calculate_metrics_ee_bill(e1,e2,e_e):
+    
+#    if 'bill_articles_co-occurence_mutual_information' in e_e or 'bill_articles_sentence_cosine_similarity_keywords' in e_e:
+#        print e_e
+#        print 'None'
+
+
+    if 'bill_articles_ids' not in e1 or 'bill_articles_ids' not in e2:
+        raise Exception('No docs for {} or {}'.format(e1['name'], e2['name']))
+    e1_count = len(e1['bill_articles_ids'])
+    e2_count = len(e2['bill_articles_ids'])
+    intersection_count = float(intersection(e1['bill_articles_ids'],e2['bill_articles_ids']))
 
     metrics = {}
-    metrics['google_mutual_information'] = log((e_e['google_count']+1)/(e1_count*e2_count+1))
-    metrics['google_dice'] = (2*(e_e['google_count']+1))/(e1_count+e2_count+1)
-    metrics['google_jaccard'] = ((e_e['google_count']+1)/(e1_count+e2_count-e_e['google_count']+1))
+    metrics['bill_articles_co-occurence_mutual_information'] = log((intersection_count+1)/(e1_count*e2_count+1))
+    metrics['bill_articles_co-occurence_dice'] = (2*(intersection_count))/(e1_count+e2_count+1)
+    metrics['bill_articles_co-occurence_jaccard'] = ((intersection_count)/(e1_count+e2_count-intersection_count+1))
     # Cosine similarity
+    if 'entity_keywords'not in e1 or 'entity_keywords' not in e2:
+        #print ('No kws for {} or {}'.format(e1['name'], e2['name']))
+        return None
+
+    e1ks = e1['entity_keywords'].items() 
+    e1ks.sort()
+     
+    e2ks = e2['entity_keywords'].items()
+    e2ks.sort()
+
+    metrics['bill_articles_sentence_cosine_similarity_keywords'] = cosine_similarity_keywords(e1ks,e2ks)   
+    return metrics
+
+def calculate_metrics_ee_general(db,bill_id,e_e):
+    
+    if 'co-occurence_mutual_information' in e_e and 'co-occurence_dice' in e_e and 'co-occurence_jaccard' in e_e and 'cosine_similarity_keywords' in e_e:
+        return None
+
+    e1 = db.entities.find_one({'_id':e_e['e1_id']})
+    e2 = db.entities.find_one({'_id':e_e['e2_id']})
+
+
+    if 'articles_ids'not in e1 or 'articles_ids' not in e2:
+        print 'Articles ids not present'
+        print e1['name']
+        print e2['name']
+        return None
+
+    e1_count = len(e1['articles_ids'])
+    e2_count = len(e2['articles_ids'])
+    intersection_count = float(intersection(e1['articles_ids'],e2['articles_ids']))
+
+    metrics = {}
+    metrics['co-occurence_mutual_information'] = log((intersection_count+1)/(e1_count*e2_count+1))
+    metrics['co-occurence_dice'] = (2*(intersection_count))/(e1_count+e2_count+1)
+    metrics['co-occurence_jaccard'] = ((intersection_count)/(e1_count+e2_count-intersection_count+1))
+    # Cosine similarity
+    if 'keywords'not in e1 or 'keywords' not in e2:
+        print 'Keywords not present',e1['name'], e2['name']
+        print e1['name']
+        print e2['name']
+        return None
+
     e1ks = e1['keywords'].items() 
     e1ks.sort()
      
@@ -102,64 +179,63 @@ def calculate_metrics_ee(db,bill_id,e_e):
 
     return metrics
 
+import sys
+
 def calculate_metrics(db,bill_id):
 
-    compute_total_google_count(db,bill_id)
-    print 'Computed Google count' 
-    entities = [db.entities.find_one({'_id':e_id}) for e_id in db.bills.find_one({'id':bill_id})['relevant_entities']]
-    for i in range(0,len(entities)-1): 
-        print i
-        e1 = entities[i]
-        for j in range(i+1,len(entities)):
-            e2 = entities[j]
-            e_e = db.entity_entity.find_one({'$or':[{'e1_id':e1['_id'],'e2_id':e2['_id']},{'e2_id':e1['_id'],'e1_id':e2['_id']}]})
+    #for i in range(0,len(entities)-1): 
+    i = 0
+
+    rel_entities_bill = db.bills.find_one({'id':bill_id})['relevant_entities']
+    for e1 in rel_entities_bill :
+        e1 = db.entities_bills.find_one({'bill':bill_id,'entity':e1})
+        if e1 is None or 'bill_articles_ids' not in e1:
+            continue
+        i+=1
+        print i, e1['name']
+        j=0
+        for e2 in rel_entities_bill :
+            if e1 == e2:
+                continue
+            e2 = db.entities_bills.find_one({'bill':bill_id,'entity':e2})
+            if 'bill_articles_ids' not in e2:
+                continue
+#        for e2 in db.entities_bills.find({'bill':bill_id,'bill_articles_ids':{'$exists':True}},timeout=False).batch_size(5100):
+            #e2 = db.entities.find_one({'_id':eb2['entity']})
+            j+=1
+            if e2 is None or e1['name'] == e2['name']:
+                continue
+            if j%100 == 0:
+                print j
+
+            e_e = db.entity_entity.find_one({'$or':[{'e1_id':e1['entity'],'e2_id':e2['entity']},{'e2_id':e1['entity'],'e1_id':e2['entity']}]})
             if e_e is None:
-                print e1['_id'], e2['_id']
-                if e1['name'] == e2['name']:
-                    print 'Continuing'
-                    continue
                 e_e = {}
 
                 if e1['name'] > e2['name']:
                     e_e['e1_name'] = e2['name']
                     e_e['e2_name'] = e1['name']
-                    e_e['e1_id'] = e2['_id']
-                    e_e['e2_id'] = e1['_id']
+                    e_e['e1_id'] = e2['entity']
+                    e_e['e2_id'] = e1['entity']
                 else:
                     e_e['e1_name'] = e1['name']
                     e_e['e2_name'] = e2['name']
-                    e_e['e1_id'] = e1['_id']
-                    e_e['e2_id'] = e2['_id']
-                e_e['google_count'] = 0
+                    e_e['e1_id'] = e1['entity']
+                    e_e['e2_id'] = e2['entity']
                 e_e['bill_id'] = bill_id
-
-            metrics = calculate_metrics_ee(db,bill_id,e_e)
+            '''
+            if 'bill_metrics' not in e_e:
+                e_e['bill_metrics'] = {}
+            if 'bill_id' not in e_e['bill_metrics'] :
+                e_e['bill_metrics'][bill_id] = {}
+            '''
+            metrics = calculate_metrics_ee_bill(e1,e2,e_e)
+            if metrics is None:
+                print 'continuing'
+                continue
             for (metric,value) in metrics.items():
                 e_e[metric] = value
-            db.entity_entity.update({'$or':[{'e1_id':e1['_id'],'e2_id':e2['_id']},{'e2_id':e1['_id'],'e1_id':e2['_id']}]},e_e,upsert=True)
-
-def compute_total_google_count(db,bill_id):
-    entities = [db.entities.find_one({'_id':e_id}) for e_id in db.bills.find_one({'id':bill_id})['relevant_entities']]
-
-    for e1 in entities:
-        count = 0
-        for e2 in entities:
-            ee = db.entity_entity.find_one({'$or':[{'e1_id':e1['_id'],'e2_id':e2['_id']},{'e2_id':e1['_id'],'e1_id':e2['_id']}]})
-            if ee is not None:
-                count += ee['google_count']
-            else:
-                if e1['_id'] != e2['_id']:
-                    pass
-                    #print('entity-entity relation is null, e1:{} and e2:{}'.format(e1['name'],e2['name']))
-
-        if 'google_count' in e1:
-            google_count = e1['google_count']
-        else:
-            google_count = {}
- 
-        google_count[bill_id] = count
-
-        db.entities.update({'_id':e1['_id']},{'$set':{'google_count':google_count}})
+            #db.entity_entity.update({'$or':[{'e1_id':e1['entity'],'e2_id':e2['entity']},{'e2_id':e1['entity'],'e1_id':e2['entity']}]},e_e,upsert=True)
 
 def get_norm(v):
     return sqrt(v[0]**2 + v[1]**2)
@@ -183,22 +259,6 @@ def elbow(scores):
         
 def find_cutting_point(scores, epsilon = 0.0005,window_size = 10):
     return elbow(scores)
-    cosines = []
-    for i in range(window_size/2+1,len(scores)-window_size/2):
-        v1 = (-1*window_size/2,scores[i-window_size/2])
-        v2 = (window_size/2,scores[i+window_size/2])
-        n1 = sqrt(v1[0]**2 +v1[1]**2)
-        n2 = sqrt(v2[0]**2 +v2[1]**2)
-        cos = (v1[0]*v2[0] + v1[1]*v2[1])/(n1*n2)
-        cosines.append((cos,i))
-        '''
-        slope = abs(float(scores[i-window_size/2]-scores[i+window_size/2])/(window_size))
-        if slope<epsilon:
-            return i
-        '''
-    for cos in cosines:
-        print cos
-    return None
 
 def generate_graph(db,bill_id,method):
     if type(method) is list:
@@ -209,7 +269,7 @@ def generate_graph(db,bill_id,method):
         generate_graph_method(db,bill_id,method)
         return
 
-    key_entities = [u'Ricardo', u'Felip Puig', u'Espana', u'Adsera', u'Turistico', u'Hortensia Grau', u'World', u'Veremonte', u'Arturo', u'Gabriel Escarrer', u'Melia', u'Portaventura', u'Macao', u'Artur Mas', u'Singapur', u'Port Aventura', u'Xavier Sabat', u'Enrique Ba\xf1uelos', u'Eurovegas', u'Roca Village', u'Albert Batet', u'Vegas Sands', u'Reus', u'Pere Granados', u'Sheldon Adelson', u'Las Vegas', u'BCN', u'Cataluna', u'Pere Navarro', u'Oriol Amoros', u'Europa', u'Costa Dorada', u'Josep Felix Ballesteros', u'Josep Poblet', u'Damia Calvet', u'Parlament', u'Vila-seca', u'Catalunya', u'Europa Press', u'Value Retail', u'Tarragona', u'Costa Daurada', u'Xavier Adsera', u'Barcelona', u'Barcelona World', u'Xavier Sabate', u'Hard Rock', u'Francesc Perendreu', u'Melco', u'Economia', u'Salou']
+    key_entities = [u'Ricardo', u'Felip Puig', u'Espana', u'Adsera', u'Turistico', u'Hortensia Grau', u'World', u'Veremonte', u'Gabriel Escarrer', u'Melia', u'Portaventura', u'Macao', u'Artur Mas', u'Singapur', u'Port Aventura', u'Xavier Sabat', u'Enrique Ba\xf1uelos', u'Eurovegas', u'Roca Village', u'Albert Batet', u'Vegas Sands', u'Reus', u'Pere Granados', u'Sheldon Adelson', u'Las Vegas', u'BCN', u'Cataluna', u'Pere Navarro', u'Oriol Amoros', u'Europa', u'Costa Dorada', u'Josep Felix Ballesteros', u'Josep Poblet', u'Damia Calvet', u'Parlament', u'Vila-seca', u'Catalunya', u'Europa Press', u'Value Retail', u'Tarragona', u'Costa Daurada', u'Xavier Adsera',  u'Barcelona World', u'Xavier Sabate', u'Hard Rock', u'Francesc Perendreu', u'Melco', u'Economia', u'Salou']
 
     for e in key_entities:
         print ''
@@ -226,10 +286,8 @@ def generate_graph(db,bill_id,method):
                 
 #    generate_graph(db,bill_id,'google_dice')
 
-def generate_graph_method(db,bill_id,metric):
-    entities = [db.entities.find_one({'_id':e_id}) for e_id in db.bills.find_one({'id':bill_id})['relevant_entities']]
-    relevant_entities = {}
-    for entity in entities:
+#for entity in entities:
+'''
         relevant_entities[entity['name']] = []
         entity_entities = []
         for e_e in db.entity_entity.find({'$or':[{'e1_id':entity['_id']},{'e2_id':entity['_id']}]}):
@@ -237,34 +295,71 @@ def generate_graph_method(db,bill_id,metric):
                 if (e_e['e1_id'] == e['_id'] or e_e['e2_id'] == e['_id']) and e['_id'] != entity['_id'] and 'google_mutual_information' in e_e:
                     entity_entities.append(e_e)
         values = []
-        for e_e in entity_entities:
-            if e_e['e1_name'] == entity['name']:
-                values.append((e_e[metric],e_e['e2_name'])) 
-            else:
-                values.append((e_e[metric],e_e['e1_name'])) 
+'''
 
+def generate_graph_method(db,bill_id,metric):
+    relevant_entities = {}
+    k=0
+    rel_entities_bill = db.bills.find_one({'id':bill_id})['relevant_entities']
+    for e1 in rel_entities_bill :
+        e_b = db.entities_bills.find_one({'bill':bill_id,'entity':e1})
+        k+=1 
+#        print k,e_b['name']
+        values = []
+        relevant_entities[e_b['name']] = []
+        j=0
+        for e2 in rel_entities_bill:
+            if e1 == e2:
+                continue
+	    #print db.entity_entity.find({'$or':[{'e1_id':e1},{'e2_id':e1}],metric:{'$exists': True},'bill_id':bill_id}).count()
+            e_e = db.entity_entity.find_one({'$or':[{'e1_id':e2,'e2_id':e1},{'e1_id':e1,'e2_id':e2}],metric:{'$exists': True},'bill_id':bill_id})
+
+            if e_e is None:
+                j+=1
+                print e1,e2
+                e_b2 = db.entities_bills.find_one({'bill':bill_id,'entity':e2})
+                values.append((0,e_b2['name']))
+                #print ' '+e_b2['name']
+                continue
+            if e_e['e1_name'] == e_b['name']:
+                if e_e[metric] > 0.1:
+                    values.append((e_e[metric],e_e['e2_name'])) 
+            else:
+                if e_e[metric] > 0.1:
+                    values.append((e_e[metric],e_e['e1_name'])) 
+        if len(values)==0:
+            continue
+#      print j
         values.sort(reverse=True)
+        #print len(values)
+        print 'P:{}'.format(e_b['name'])
+        for (value,name) in values:
+            print ' {} with value: {}'.format(name.encode('utf8'),value)
         cut_point = find_cutting_point([v[0] for v in values])
         for i in range(0,cut_point+1):
-            relevant_entities[entity['name']].append(values[i][1])
+            relevant_entities[e_b['name']].append(values[i][1])
 
     links = {}
-    for entity in entities:
+    for entity in db.entities_bills.find({'bill':bill_id,'bill_articles_ids':{'$exists':True}},timeout=False): 
         links[entity['name']] = []
+    key_entities = [u'Felip Puig', u'Espana', u'Adsera', u'Turistico', u'Hortensia Grau', u'World', u'Veremonte',  u'Gabriel Escarrer', u'Melia', u'Portaventura', u'Macao', u'Artur Mas', u'Singapur', u'Port Aventura', u'Xavier Sabat', u'Enrique Banuelos', u'Eurovegas', u'Roca Village', u'Albert Batet', u'Vegas Sands', u'Reus', u'Pere Granados', u'Sheldon Adelson', u'Las Vegas', u'BCN', u'Cataluna', u'Pere Navarro', u'Oriol Amoros', u'Europa', u'Costa Dorada', u'Josep Felix Ballesteros', u'Josep Poblet', u'Damia Calvet', u'Parlament', u'Vila-seca', u'Catalunya', u'Europa Press', u'Value Retail', u'Tarragona', u'Costa Daurada', u'Xavier Adsera', u'Barcelona World', u'Xavier Sabate', u'Hard Rock', u'Francesc Perendreu', u'Melco', u'Economia', u'Salou']
 
-    for entity in entities:
+    #for entity in db.entities_bills.find({'bill':bill_id,'bill_articles_ids':{'$exists':True}},timeout=False):
+    for e1 in rel_entities_bill :
+        entity = db.entities_bills.find_one({'bill':bill_id,'entity':e1})
         for r_e in relevant_entities[entity['name']]:
-            if entity['name'] in relevant_entities[r_e] and entity['name']<r_e:
+            if r_e in relevant_entities and entity['name'] in relevant_entities[r_e] and entity['name']<r_e and (entity['name'] in key_entities or r_e in key_entities):
 #                print '"{}","{}"'.format(r_e.encode('utf8'),entity['name'].encode('utf8') )
                 links[entity['name']].append(r_e)
                 links[r_e].append(entity['name'])
     return links
 
-    for x in ['Jara','Albert Batet','Oriol Amoros','Xavier Sabat','Veremonte','Vegas Sands','Xavier Adsera','Adsera','Melco','Gabriel Escarrer','Melia','Value Retail']:
-        print x,links[x]
-    coms = get_communities_louvain(links)
-    for com in coms:
-        print com
+    for x in ['Sheldon Adelson','Albert Batet','Oriol Amoros','Xavier Sabat','Veremonte','Vegas Sands','Xavier Adsera','Adsera','Melco','Gabriel Escarrer','Melia','Value Retail']:
+	if x in links:
+        	print x,links[x]
+    #coms = get_communities_louvain(links)
+    #for com in coms:
+    #    print com
     '''
     get_communities_wcc(links)
     return
@@ -337,12 +432,81 @@ def get_communities_wcc(graph):
     f.close()
     for community in communities:
         print community
-   
-def plot(db, bill_id):
+'''
+def generate_graph_method(db,bill_id,metric):
+    relevant_entities = {}
+    i=0
+    rel_entities_bill = db.bills.find_one({'id':bill_id})['relevant_entities']
+    for e_b in db.entities_bills.find({'bill':bill_id,'bill_articles_ids':{'$exists':True}},timeout=False):
+        if e_b['entity'] not in rel_entities_bill:
+            continue
+        i+=1 
+        #print i
+        values = []
+        relevant_entities[e_b['name']] = []
+        for e_e in db.entity_entity.find({'$or':[{'e1_id':e_b['_id']},{'e2_id':e_b['_id']}],metric:{'$exists': True},'bill_id':bill_id}):
+            if e_e['e1_name'] == e_b['name']:
+                if e_e['e2_id'] not in rel_entities_bill:
+                    continue
+                values.append((e_e[metric],e_e['e2_name'])) 
+            else:
+                if e_e['e1_id'] not in rel_entities_bill:
+                    continue
+                values.append((e_e[metric],e_e['e1_name'])) 
+        if len(values)==0:
+            continue
+        values.sort(reverse=True)
+        #print len(values)
+        cut_point = find_cutting_point([v[0] for v in values])
+        for i in range(0,cut_point+1):
+            relevant_entities[e_b['name']].append(values[i][1])
 
+    links = {}
+    for entity in db.entities_bills.find({'bill':bill_id,'bill_articles_ids':{'$exists':True}},timeout=False): 
+        links[entity['name']] = []
+
+    for entity in db.entities_bills.find({'bill':bill_id,'bill_articles_ids':{'$exists':True}},timeout=False):
+        for r_e in relevant_entities[entity['name']]:
+            if entity['name'] in relevant_entities[r_e] and entity['name']<r_e:
+#                print '"{}","{}"'.format(r_e.encode('utf8'),entity['name'].encode('utf8') )
+                links[entity['name']].append(r_e)
+                links[r_e].append(entity['name'])
+                print entity['name'].encode('utf8'),r_e.encode('utf8')
+    return links
+'''   
+def plot(db, bill_id,metric):
+
+    rel_entities_bill = db.bills.find_one({'id':bill_id})['relevant_entities']
+    for e1 in rel_entities_bill :
+        e_b = db.entities_bills.find_one({'bill':bill_id,'entity':e1})
+        #print i
+        values = []
+        for e2 in rel_entities_bill :
+            if e1 == e2:
+                continue
+#	for e_e in db.entity_entity.find({'$or':[{'e1_id':e_b['_id']},{'e2_id':e_b['_id']}],metric:{'$exists': True},'bill_id':bill_id}):
+            e_e = db.entity_entity.find_one({'$or':[{'e1_id':e2,'e2_id':e1},{'e1_id':e1,'e2_id':e2}],metric:{'$exists': True},'bill_id':bill_id})
+            if e_e is None:
+                print e_e
+                continue
+            if e_e[metric]>0.1:
+                values.append(e_e[metric]) 
+
+        values.sort(reverse=True)
+        plt.plot(range(len(values)),values)
+        i = find_cutting_point(values)
+        if i is not None:
+            plt.plot(i, values[i], 'ro')
+        directory = './results/metrics/'+bill_id+'/'+metric+'/'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        plt.savefig(directory+ e_b['name']+'.png')
+        plt.clf()
+
+'''
     entities = [db.entities.find_one({'_id':e_id}) for e_id in db.bills.find_one({'id':bill_id})['relevant_entities']]
 
-    metrics = ['google_mutual_information', 'google_dice', 'google_jaccard','cosine_similarity_keywords']
+    metrics = ['co-occurence_mutual_information', 'co-occurence_dice', 'co-occurence_jaccard','cosine_similarity_keywords']
 
     for entity in entities:
         entity_entities = []
@@ -367,11 +531,14 @@ def plot(db, bill_id):
                 os.makedirs(directory)
             plt.savefig(directory+ entity['name']+'.png')
             plt.clf()
+'''
 def main():
     db = MongoClient().catalan_bills
     bill_id = '00062014'
     #calculate_metrics(db,bill_id)
-    #plot(db,bill_id)
-    generate_graph(db,bill_id,['cosine_similarity_keywords','google_dice'])
+    #plot(db,bill_id,'bill_articles_sentence_cosine_similarity_keywords')
+#    generate_graph(db,bill_id,['cosine_similarity_keywords','google_dice']) #['bill_articles_co-occurence_mutual_information','bill_articles_sentence_cosine_similarity_keywords']
+    #print('GENERATING')
+    generate_graph(db,bill_id,'bill_articles_sentence_cosine_similarity_keywords')
 #    generate_graph(db,bill_id,'google_dice')
 main()
