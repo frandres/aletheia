@@ -5,21 +5,23 @@
 \documentclass{report-DMKM}
 
 % this package (optionnal) allows merging rows and columns in latex table 
-%\usepackage{amsmath}
+\usepackage{amsmath}
 \usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{float}
 
 %The following fields (title, author, date, tutors et place) must be present
 \title{Mining parliamentary data and news articles \newline to find patterns of collaboration between politicians and third party actors}
 \author{Francisco Andr\'es RODR\'IGUEZ DRUMOND}
 % Defense date
 \date{July 7th, 2014}
-\tutors{\mbox{Marta Arias, Universitat Polit\`ecnica de Catalunya},\newline
-        Josep Larriba, Data Management group (DAMA-UPC),\newline}
+\tutors{\mbox{Marta Arias, LARCA-UPC},\newline
+        Josep Larriba, DAMA-UPC\newline}
 
-\place{Data Management group, Barcelona, Spain.}
+\place{Universitat Polit\`ecnica de Catalunya, Barcelona, Spain.}
 % You can add the logo of the institution where you carry out your internship. Example here ERIC lab
 
-\logo{img/dama_logo.jpg}{25mm} 
+%\logo{img/dama_logo.jpg}{25mm} 
 
 \begin{document}
 
@@ -29,7 +31,7 @@
 \newpage
 % summary in English  (mandatory)
 \begin{abstract}
-LOPEN IPSUM
+There is an increasing interest in having tools to closely monitor the activity of politicians for transparency and accountability purposes. Among the different approaches in the literature, using Social Network Analysis tools for studying the dynamics of power inside a Parliament has yielded interesting results. However, finding collaborations between politicians and third party actors, which often do not appear in bills or in the transcripts of debates, remains a challenge. In this work we present a novel technique for automatically generating social networks relating politicians and other relevant third party actors that can be used for political analysis. Our proposal uses parliamentary data and news articles for automatically detecting relevant entities and discovering their relations by looking at their semantic similarity and co-occurrence in documents. We i) use bills approved by a parliament to model topics, ii) use these topics to find related news articles, iii) perform entity extraction and filtering and iv) compute and threshold entity-entity similarity measures to generate social networks describing the dynamics surrounding a bill. We apply our tool to analyze bills from the Catalan Parliament and show how relevant insights indicating patterns of collaboration between political actors can be gained.
 \end{abstract}
 
 % summary in French  (mandatory)
@@ -46,9 +48,9 @@ LOPEN IPSUM
 \newpage
 \input{chapters/introduction}
 \newpage
-\input{chapters/relatedwork}
+\input{chapters/problem_definition}
 \newpage
-\input{chapters/proposal}
+\input{chapters/relatedwork}
 \newpage
 \input{chapters/implementation}
 \newpage

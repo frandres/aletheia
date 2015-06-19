@@ -1,7 +1,50 @@
 \section{Conclusions}\label{sec:conclusions}
 
-Conclusions come here.
+In this work we present a method for automatically generating bill-centered Policy Networks relating politicians and other relevant third parties. The generated Policy Networks can be used for doing political analysis, i.e., detecting influential actors, understanding the flow of information surrounding a bill and identifying possible lobbying relationships. By using parliamentary data and news articles, we automatically detect relevant entities and discover their relationships by studying their semantic similarity and sentence co-occurence. 
 
-Future work:
-- Validation by experts
-- Time component
+Summarize results aqui.
+
+our method is intended to be an unbiased, low-cost, semiautomated toal to aid the process of Policy Network generation and analysis. 
+
+Faltan articulos.
+
+\subsection{Contributions}\label{subsec:conclusions_contributions}
+
+Our contributions are the following:
+
+\begin{enumerate}
+\item The use of bills as a cornerstone relating political actors, which allows to i) understand better the discovered relations and ii) and to find fine-grained relationships which would otherwise be missed.
+\item An unsupervised method for automatically detecting relevant entities of a given topic from a corpus of documents -- in our case news articles -- given a set of seed entities. 
+\item A framework for labeling the discovered relationships according to the polarity of the political actors and generating signed graphs, which allows the use of Signed Social Network Analysis tools.
+\end{enumerate}
+
+\subsection{Future work}\label{subsec:conclusions_futurework}
+
+The work we have presented is a first step with many improvements which are left for future work. These improvements consists of i) refining the method and its evaluation with expert insight, ii) finding ways to enhance the PN generation phase and iii) producing a list of use cases as a base to tailor the method to the needs of political analysts and journalists.\\
+
+\subsubsection{Towards a more rigorous evaluation and problem definition}
+
+The first step for improving our method consists in validating our results by a group of experts. In this report we show how our results are reasonable and indicate the potential of bill-centered PN generation. However it is import to acknowledge that the analysis we made might be deceiving as it is on the one hand prone to confirmation bias, meaning that when analyzing a PN we might look for information that confirms our own sets of beliefs, and on the other hand can lead to missing links, which at this stage we are not possible to detect. \\
+
+Consequently, we need a more rigorous and systematic approach for evaluation, meaning producing a set of gold standard PNs and list of relevant entities so that we can validate the results in a quantitative way. Assessing the quality of our proposal in a more formal way is key to any of the other possible improvements. Furthermore, manually generating a gold standard can shed light on ways to improve each of the steps we have presented in our method. \\
+
+\subsubsection{Improving the PN generation phase}
+
+Based on the obtained results, improving the way the entity similarity measures are computed and thresholded is arguably the most important improvement for future work. We have seen many cases in which the discovered relations are meaningful and lead to important discoveries in terms of communities, influence and paths of communication between relevant actors. In some others, there are both missing and irrelevant relationships; this can be due either to the quality of the similarity measure or it's threshold. It is important to assess which of these two problems needs to be addressed. For instance, given a set of gold standard PNs we could look at the statistical correlation of the similarity scores between entities and the values of the gold standard relations, as in the work presented in \cite{policy-networks}. If a high correlation is found, then it is better to focus on the improvement of the similarity measure thresholding, which can be done by trying different methods and using the one that yields the best results with respect to the gold standard.\\
+
+To improve the similarity measures there are many things which can be done. We decided to use a text-based similarity measure comparing entities based on the words they appear in because it captures i) co-occurrence and ii) semantic relatedness. However, it might be that entity co-occurrence should have a stronger weight for detecting relevant relationships. We have seen, for instance, how politicians tend to be related to many other politicians without necessarily being related by the bill; it might well be that because of their condition of politician and parliamentaries, they share a great number of keywords. On the other hand, using LSI for computing similarity measures between entities might also be useful; this requires however defining how many concepts should be used as a parameter. \\
+
+\subsubsection{Generative models: a major improvement and food for thought}
+
+On another hand, there are many efforts of the scientific community in finding ways to generate graphs and predict missing links by using information about the topology of the desired graphs. Generative models allow to reason in a statistical manner by thinking of the probability of a graph given a set of parameters $\theta$ that describe the underlying structure of a family of graphs. For instance, the \emph{Stochastic Block Model} assumes that there are a number of communities (blocks). This allows to statistically infer the set of parameters describing that community structure (($P(\theta|G)$). Similarly, given a set of parameters, it allows to generate the most likely graph (($P(G|\theta)$).\\
+
+A major improvement of this work consists in studying i) what types of generative models best describe the topology of policy networks ii) how to enrich these models with the computed similarity measures and iii) evaluating the use of these methods for generating PNs. Doing this could allow us to compute PNs not only based on the media coverage of a law, but also on the generalization of what a bill-centered PN looks like. Also, it allows us to avoid the problem of thresholding similarity measures.
+
+\subsubsection{How to use PNs for political analysis: use-case driven PN generation}
+
+There are plenty of Social Network Analysis tools which can be used to analyze our PN. In this case we have illustrated the use of modularity clustering and Pagerank to detect groups of actors and influential actors, but there are other ways to analyze these graphs. One thing to think about is whether it is useful to threshold the similarity measures. For example, we could look for the shortests paths connecting two organizations that necessarily traverse PEOPLE nodes, in which case the weight of an edge is important. Similarly, it would be interesting to explore if it is worth it to work with directed graphs. \\
+
+Furthermore, it could interesting to analyze the time evolution of these graphs to understand how the dynamics of a law evolve and answer questions such as how does the influence of an actor change over time, what new actors appear and how do their dynamics change, among others. For instance, the PN of a specific bill could be very different before it is approved and after it is approved, e.g. could be the case that a bill has a negative impact on a society, triggering new organizations to be involved with it.\\
+
+Another aspect of SNA which could be explored is the use of multiplexes, which is becoming increasingly popular in the network analysis community. Multiplexes are networks composed of different layers in which we find the same nodes but different types of links; it is interesting to study from this perspective the correlation between layers generated for different bills or to employ multiplex SNA tools.
+

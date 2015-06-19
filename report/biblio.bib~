@@ -52,6 +52,18 @@
   year={2007}
 }
 
+
+@article{traag2009community,
+  title={Community detection in networks with positive and negative links},
+  author={Traag, VA and Bruggeman, Jeroen},
+  journal={Physical Review E},
+  volume={80},
+  number={3},
+  pages={036115},
+  year={2009},
+  publisher={APS}
+}
+
 @inproceedings{jrc-3,
   title={Extracting and learning social networks out of multilingual news},
   author={Pouliquen, Bruno and Tanev, Hristo and Atkinson, Martin},
@@ -188,4 +200,13 @@
   booktitle={Proceedings of the Fourth AAAI Conference on Weblogs and Social Media (ICWSM), Data Challenge Workshop},
   year={2010},
   organization={Citeseer}
+}
+
+@inproceedings{xiang2010modeling,
+  title={Modeling relationship strength in online social networks},
+  author={Xiang, Rongjing and Neville, Jennifer and Rogati, Monica},
+  booktitle={Proceedings of the 19th international conference on World wide web},
+  pages={981--990},
+  year={2010},
+  organization={ACM}
 }

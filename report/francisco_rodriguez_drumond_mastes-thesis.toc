@@ -1,16 +1,38 @@
-\contentsline {section}{\numberline {1}Hosting institution}{1}{section.1}
-\contentsline {section}{\numberline {2}Acknowledgement}{2}{section.2}
-\contentsline {section}{\numberline {3}Introduction}{3}{section.3}
-\contentsline {section}{\numberline {4}Related works}{5}{section.4}
-\contentsline {subsection}{\numberline {4.1}Entity co-occurrence: a first step towards the creation of SN}{5}{subsection.4.1}
-\contentsline {subsection}{\numberline {4.2}What links two entities? Enriching the SN with the strength and semantics of the relations}{6}{subsection.4.2}
-\contentsline {subsection}{\numberline {4.3}Going beyond the co-occurrence approach: finding links between entities across documents}{7}{subsection.4.3}
-\contentsline {subsection}{\numberline {4.4}SNA and political analysis. Has anyone done this before?}{7}{subsection.4.4}
-\contentsline {subsection}{\numberline {4.5}Framing our work with respect to the state of the art}{8}{subsection.4.5}
-\contentsline {section}{\numberline {5}Proposal}{10}{section.5}
-\contentsline {section}{\numberline {6}Implementation}{11}{section.6}
-\contentsline {subsection}{\numberline {6.1}From bills to news articles: modelling topics from bills }{11}{subsection.6.1}
-\contentsline {subsection}{\numberline {6.2}From news articles to political actors: entity recognition and preprocessing}{12}{subsection.6.2}
-\contentsline {section}{\numberline {7}Results}{14}{section.7}
-\contentsline {section}{\numberline {8}Conclusions}{15}{section.8}
-\contentsline {section}{ANNEXES}{I}{section*.2}
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}
+\contentsline {section}{\numberline {2}Problem definition}{4}{section.2}
+\contentsline {subsection}{\numberline {2.1}Policy Networks: Social Network Analysis for Political Science}{4}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Towards the automatic generation of PNs: defining our objectives}{4}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}What type of PN do we aim to generate?}{5}{subsection.2.3}
+\contentsline {subsection}{\numberline {2.4}Stop Online Piracy Act (SOPA): a motivating example}{5}{subsection.2.4}
+\contentsline {subsection}{\numberline {2.5}Is it really possible to detect lobbying in an automated way? An important caveat}{7}{subsection.2.5}
+\contentsline {section}{\numberline {3}Related works}{8}{section.3}
+\contentsline {subsection}{\numberline {3.1}Entity co-occurrence: a first step towards the creation of SN}{8}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}What links two entities? Enriching the SN with the strength and semantics of the relations}{9}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Going beyond the co-occurrence approach: finding links between entities across documents}{10}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}SNA and political analysis. Has anyone done this before?}{10}{subsection.3.4}
+\contentsline {subsection}{\numberline {3.5}Framing our work with respect to the state of the art}{11}{subsection.3.5}
+\contentsline {section}{\numberline {4}Generating bill based Policy Networks}{12}{section.4}
+\contentsline {subsection}{\numberline {4.1}Preprocessing: getting the data ready for analysis}{12}{subsection.4.1}
+\contentsline {subsubsection}{\numberline {4.1.1}Modelling topics from bills}{13}{subsubsection.4.1.1}
+\contentsline {subsection}{\numberline {4.2}Analyzing a bill}{13}{subsection.4.2}
+\contentsline {subsubsection}{\numberline {4.2.1}From bills to news articles: modelling topics from bills }{13}{subsubsection.4.2.1}
+\contentsline {subsubsection}{\numberline {4.2.2}Finding the best trade-off point between relevance and size}{14}{subsubsection.4.2.2}
+\contentsline {subsubsection}{\numberline {4.2.3}From news articles to political actors: entity recognition and preprocessing}{15}{subsubsection.4.2.3}
+\contentsline {subsubsection}{\numberline {4.2.4}Extracting the authors and influencers of a bill from Parliamentary data.}{15}{subsubsection.4.2.4}
+\contentsline {subsubsection}{\numberline {4.2.5}Selecting relevant actors: filtering noisy entities}{16}{subsubsection.4.2.5}
+\contentsline {subsubsection}{\numberline {4.2.6}From a list of relevant actors to a Policy Networks: computing and thresholding similarity measures}{17}{subsubsection.4.2.6}
+\contentsline {section}{\numberline {5}Results}{20}{section.5}
+\contentsline {subsection}{\numberline {5.1}BCN-World}{20}{subsection.5.1}
+\contentsline {subsubsection}{\numberline {5.1.1}Organization-Organization PN}{20}{subsubsection.5.1.1}
+\contentsline {subsubsection}{\numberline {5.1.2}Person-Organization PN}{21}{subsubsection.5.1.2}
+\contentsline {subsection}{\numberline {5.2}Law of Popular Non-referendary Consults}{23}{subsection.5.2}
+\contentsline {subsection}{\numberline {5.3}Organization PN}{23}{subsection.5.3}
+\contentsline {subsection}{\numberline {5.4}Person PN}{24}{subsection.5.4}
+\contentsline {section}{\numberline {6}Conclusions}{26}{section.6}
+\contentsline {subsection}{\numberline {6.1}Contributions}{26}{subsection.6.1}
+\contentsline {subsection}{\numberline {6.2}Future work}{26}{subsection.6.2}
+\contentsline {subsubsection}{\numberline {6.2.1}Towards a more rigorous evaluation and problem definition}{26}{subsubsection.6.2.1}
+\contentsline {subsubsection}{\numberline {6.2.2}Improving the PN generation phase}{26}{subsubsection.6.2.2}
+\contentsline {subsubsection}{\numberline {6.2.3}Generative models: a major improvement and food for thought}{27}{subsubsection.6.2.3}
+\contentsline {subsubsection}{\numberline {6.2.4}How to use PNs for political analysis: use-case driven PN generation}{27}{subsubsection.6.2.4}
+\contentsline {section}{ANNEXES}{I}{section*.6}

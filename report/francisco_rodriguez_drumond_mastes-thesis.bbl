@@ -98,6 +98,13 @@ Bruno Pouliquen, Hristo Tanev, and Martin Atkinson.
 \newblock In {\em Proceedings of the Social Networks and Application tools
   workshop (Skalica, Slovakia, Septembe}. Citeseer, 2008.
 
+\bibitem{rousseeuw1987silhouettes}
+Peter~J Rousseeuw.
+\newblock Silhouettes: a graphical aid to the interpretation and validation of
+  cluster analysis.
+\newblock {\em Journal of computational and applied mathematics}, 20:53--65,
+  1987.
+
 \bibitem{syntactic-template}
 Hristo Tanev.
 \newblock Unsupervised learning of social networks from a multiple-source news
@@ -105,13 +112,10 @@ Hristo Tanev.
 \newblock {\em MuLTISOuRcE, MuLTILINguAL INfORMATION ExTRAc-TION ANd
   SuMMARIzATION}, page~33, 2007.
 
-\bibitem{thomas2006get}
-Matt Thomas, Bo~Pang, and Lillian Lee.
-\newblock Get out the vote: Determining support or opposition from
-  congressional floor-debate transcripts.
-\newblock In {\em Proceedings of the 2006 conference on empirical methods in
-  natural language processing}, pages 327--335. Association for Computational
-  Linguistics, 2006.
+\bibitem{traag2009community}
+VA~Traag and Jeroen Bruggeman.
+\newblock Community detection in networks with positive and negative links.
+\newblock {\em Physical Review E}, 80(3):036115, 2009.
 
 \bibitem{xiang2010modeling}
 Rongjing Xiang, Jennifer Neville, and Monica Rogati.
