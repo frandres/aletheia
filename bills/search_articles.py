@@ -246,7 +246,7 @@ def main():
     bills = []
 #for bill in db.bills.find():
     for bill in db.bills.find():
-        if bill['id'] != '00062014' and int(bill['year'])>=2014:
+        if int(bill['year'])>=2014:
             bills.append(bill)
 
     print ('Processing: {}'.format(len(bills)))
@@ -280,7 +280,10 @@ def main():
         articles = [(x['_source']['body'],x['_score'],x['_id']) for x in results['hits']['hits']]
 
         num_articles = find_cutting_point([(y,_id) for (_,y,_id) in articles])
-
+        print bill['id']
+        r_articles_ids = [x['_id'] for x in results['hits']['hits']]
+        db.bills.update({'id':bill['id']},{'$set':{'bill_articles_ids':r_articles_ids}})
+        continue
         print('Bill: {}'.format(bill['id']))
 
         print(' Found {} relevant articles'.format(num_articles))

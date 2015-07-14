@@ -149,8 +149,6 @@ def main():
     conn = MongoClient()
     db = conn.catalan_bills
     docs = process_docs('./spanish/txt/',db)
-    '''
     for (key, value) in docs.items():
         db.bill.insert(value)
-    '''
 main()

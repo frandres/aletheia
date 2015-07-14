@@ -6,213 +6,157 @@ from collections import defaultdict
 import cPickle as pickle
 from bisect import bisect_left
 import os.path
+import numpy as np
 
-'''
-From the entities_documents collection in MongoDB generate 
- + A binary entity/document matrix (corpus) (1 iff the entity occurs in the document) 
-   in the gensim corpus notation. [[1:0,2:0]]
- + A col2doc dictionary mapping columns to document id.
- + A row2entity dictionary mapping rows to entity_name. 
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+from elasticsearch import Elasticsearch
+import scipy.cluster.hierarchy as hac
+from math import sqrt
 
-These are return as a triplet (corpus,col2doc,row2entity)
-'''
-def ent_doc2corpus(fname='ent_document_corpus.pkl'):
-    if os.path.isfile(fname):
-        return pickle.load(open(fname,'rb'))
-    conn = MongoClient()
-    ent_col = conn.catalan_bills.entities
-    entities = []
-    for entity in ent_col.find():
-        entities.append(entity)
+from sklearn import metrics
 
-    corpus = []
-    col2doc = {}
-    doc2col = {}
-    row2entity = {}
-    max_id = 0
-    row_id = 0
+def entities2bill_documents(bill_id,db):
+    bill_articles = db.bills.find_one({'id':bill_id})['bill_articles_ids']
+    article2column = {}
+    i=0
+    for article in bill_articles:
+        article2column[article] = i
+        i+=1
+    entity2row = {}
+    matrix = []         
+    i=0
+    es = Elasticsearch()
+    for eb in db.entities_bills.find({'bill':bill_id}):
+        if 'bill_articles_ids' in eb and len(eb['bill_articles_ids'])>0:
+            entity_vector = []
+            q = {"query": {'match_phrase': {'body': {'analyzer': 'analyzer_shingle','query': eb['name']}}}}
+            if es.count(index='catnews_spanish',body=q)['count']<2:
+                continue
+            for article in eb['bill_articles_ids']:
+                entity_vector.append((article2column[article],1.0))
+            entity2row[eb['entity']] = i
+            i+=1
+            matrix.append(entity_vector)
+        else:
+            pass
+    return (matrix,entity2row)
 
-    ent_doc_col = conn.catalan_bills.entities_documents
+def build_distance(corpus,entities,entity2row,seeds):
 
-    for entity in entities:
-        row2entity[row_id] = entity['name']
-        row_id+=1
-        print '{} out of {}'.format(row_id,len(entities))  
-        ent_docs = ent_doc_col.find({'entity':entity['_id']})
-        ent_vector = []
-        docs = []
-        for ent_doc in ent_docs:
-            article_id = ent_doc['article']
-  
-            if article_id in doc2col: 
-                if article_id not in docs:
-                    ent_vector.append((doc2col[article_id],1))
-                    docs.append(article_id)
+    matrix = []
+
+    lsi = LsiModel(corpus=corpus, num_topics=10)
+
+    sim = similarities.MatrixSimilarity(lsi[corpus])
+
+    # Require that the entity have a minimum similarity with the seeds:
+    possible_entities = []
+    for n1 in entities:
+        for n2 in seeds:
+            if sim[lsi[corpus[entity2row[n1]]]][entity2row[n2]]>0.2:
+                possible_entities.append(n1)
+                break
+
+    for n1 in possible_entities:
+        vector = []
+        comp = lsi[corpus[entity2row[n1]]]
+        for n2 in possible_entities:
+            if n1 == n2:
+                vector.append(0.0)
             else:
-                docs.append(article_id)
-                doc2col[article_id] = max_id
-                col2doc[max_id] = article_id
-                ent_vector.append((doc2col[article_id],1))
-                max_id +=1
-        corpus.append(ent_vector)
+                vector.append(min(1.0,1.0-sim[comp][entity2row[n2]]))
+        matrix.append(vector)
+    return (np.array(matrix),possible_entities)
 
-    obj = (corpus,col2doc,row2entity)
-    pickle.dump(obj,open('ent_document_corpus.pkl', 'wb'),-1)
-    return obj
+def find_relevant_entities(db,bill_id,seeds):
 
+    (corpus,entity2row) = entities2bill_documents(bill_id,db)
+     
+    entities = entity2row.keys()
+    print 'Initial size: {}'.format(len(entities))
 
-'''
-From the entities_keyword collection in MongoDB generate 
- + An entity/keyword matrix (corpus) with the tf/ikf 
-   in the gensim corpus notation. [[1:3,2:2]]
-   tf denotes the number of times the keyword and the entity co-occur in a document.
- + A col2keyword dictionary mapping columns to keyword.
- + A row2entity dictionary mapping rows to entity_name. 
+    seed_ids = []
+    for seed in seeds:
+        if seed in entities:
+            seed_ids.append(seed)
 
-These are return as a triplet (corpus,col2keyword,row2entity)
-'''
-def ent_keyword2corpus(fname='ent_keyword_corpus.pkl'):
-    if os.path.isfile(fname):
-        return pickle.load(open(fname,'rb'))
-    conn = MongoClient()
-    ent_col = conn.catalan_bills.entities
-    entities = []
-    for entity in ent_col.find():
-        entities.append(entity)
+    (distance_matrix,entities)= build_distance(corpus,entities,entity2row,seed_ids)
+    print 'Prefiltered size: {}'.format(len(entities))
+    
+    print 'Distance matrix computed' 
+    seeds_indices = [entities.index(x) for x in seed_ids]
 
-    corpus = []
-    col2keyword = {}
-    keyword2col = {}
-    row2entity = {}
-    max_id = 0
-    row_id = 0
+    return find_best_cluster(distance_matrix,entities,seeds_indices)
 
-    ent_kw_col = conn.catalan_bills.entities_keywords
+def find_best_cluster(distance_matrix,entities,seeds_indices,minimum_size =100):
+    linkage_matrix = hac.linkage(distance_matrix, method='average', metric='euclidean') #single, average
 
-    for entity in entities:
-        row2entity[row_id] = entity['name']
-        row_id+=1
-        print '{} out of {}'.format(row_id,len(entities))  
-        ent_kws = ent_kw_col.find({'entity':entity['_id']})
-        kws = defaultdict(lambda: 0)
-        for ent_kw in ent_kws:
-            keyword = ent_kw['keyword']
-	      
-    	    if keyword not in keyword2col: 
-                keyword2col[keyword] = max_id
-                col2keyword[max_id] = keyword
-                max_id +=1
+    relevant_thresholds =  np.concatenate(([0],np.array(linkage_matrix[:,2])), axis=0)
+    relevant_thresholds = relevant_thresholds.tolist()
+    relevant_thresholds.reverse()
+    thresholds_silhoutte = []
+    prev_cluster_size = len(entities)+1
 
-            kws[keyword2col[keyword]]+= 1 * ent_kw['idf']
+    for t in relevant_thresholds[1:len(relevant_thresholds)]:
+        clusters_list = hac.fcluster(linkage_matrix, t, criterion='distance')
+       
+        '''
+        next_t = False
+        for s1 in seeds:
+            for s2 in seeds:
+                if s1 == s2:
+                    continue
+                if clusters_list[s1] != clusters_list[s2]:
+                    next_t = True
+                    break
+        if next_t:
+            continue
+        '''
 
-        corpus.append(kws.items())
+        mask = clusters_list == clusters_list[seeds_indices[0]]
+        new_cluster = np.array(entities)[mask]
+        if len(new_cluster)<minimum_size:
+            if len(thresholds_silhoutte)==0:
+                thresholds_silhoutte.append((1,t))
 
-    obj = (corpus,col2keyword,row2entity)
-    pickle.dump(obj,open('ent_keyword_corpus.pkl', 'wb'),-1)
-    return obj
+            break
+        if prev_cluster_size != len(new_cluster):
+            prev_cluster_size = len(new_cluster)
+            #print prev_cluster_size
+            silhoutte = np.mean(metrics.silhouette_samples(distance_matrix , clusters_list, metric='precomputed')[mask])
+            thresholds_silhoutte.append((silhoutte,t))
+            print silhoutte,prev_cluster_size
+            '''
 
-'''
-From the entities_bill collection in MongoDB generate 
- + An entity/topic matrix (corpus) with the sum(log(document)*log(freq) measure)
-   in the gensim corpus notation. [[1:3,2:2]]
- + A col2bill dictionary mapping columns to bill id.
- + A row2entity dictionary mapping rows to entity_name. 
+            print t-prev_threshold
+            prev_threshold = t
 
-These are return as a triplet (corpus,col2keyword,row2entity)
-'''
-def ent_bill2corpus(fname = 'ent_bill_corpus.pkl'):
-    if os.path.isfile(fname):
-        return pickle.load(open(fname,'rb'))
-
-    conn = MongoClient()
-    ent_col = conn.catalan_bills.entities
-    entities = []
-    for entity in ent_col.find():
-        entities.append(entity)
-
-    corpus = []
-    col2bill = {}
-    bill2col = {}
-    row2entity = {}
-    max_id = 0
-    row_id = 0
-
-    ent_bills_col = conn.catalan_bills.entities_bills
-
-    for entity in entities:
-        row2entity[row_id] = entity['name']
-        row_id+=1
-        print '{} out of {}'.format(row_id,len(entities))  
-        ent_bills = ent_bills_col.find({'entity':entity['_id']})
-        ent_topics_vector = defaultdict(lambda: 0)
-
-        for ent_bill in ent_bills:
-            bill = ent_bill['bill']
-            if bill not in bill2col:
-                bill2col[bill] = max_id
-                col2bill[max_id] = bill
-                max_id+=1
-
-            for article_occurrence in ent_bill['weight']['articles']:
-                ent_topics_vector[bill2col[bill]]+= math.log(1+article_occurrence['article_weight']) * math.log(1+article_occurrence['frequency'])
-            
-        corpus.append(ent_topics_vector.items())
-        
-    obj = (corpus,col2bill,row2entity)
-    pickle.dump(obj,open('ent_bill_corpus.pkl', 'wb'),-1)
-    return obj
-
-
-def get_test_corpus():
-    return [[(0, 1.0), (1, 1.0), (2, 1.0)],
-            [(2, 1.0), (3, 1.0), (4, 1.0), (5, 1.0), (6, 1.0), (8, 1.0)],
-            [(1, 1.0), (3, 1.0), (4, 1.0), (7, 1.0)],
-            [(0, 1.0), (4, 2.0), (7, 1.0)],
-            [(3, 1.0), (5, 1.0), (6, 1.0)],
-            [(9, 1.0)],
-            [(9, 1.0), (10, 1.0)],
-            [(9, 1.0), (10, 1.0), (11, 1.0)],
-            [(8, 1.0), (10, 1.0), (11, 1.0)]]
-
-def are_comparable_entities(e1,e2,bill2comparable):
-    for comparable_entities in bill2comparable.values():
-        i1 = bisect_left(comparable_entities,e1)
-        i2 = bisect_left(comparable_entities,e2)
-        if i1 != len(comparable_entities) and comparable_entities[i1] == e1 and i2 != len(comparable_entities) and comparable_entities[i2] == e2:
-            return True
-
-    return False
-                                    
-def get_bill2comparable(db):
-    bill2cb = {}
-    for x in db.bill_comparable_entities.find():
-        bill2cb[x['bill']] = x['entities']
-    return bill2cb
-
-def get_comparable_entities(db):
-    comparable_entities = {}
-    for x in db.comparable_entities.find():
-        comparable_entities[x['entity']]= x['comparable_entities']
-    return comparable_entities
+            '''
+    silhouttes = [x[0] for x in thresholds_silhoutte]
+    optimum_i = silhouttes.index(max(silhouttes))
+    optimum_threshold = thresholds_silhoutte[optimum_i][1]
+    clusters_list = hac.fcluster(linkage_matrix, optimum_threshold, criterion='distance')
+    mask = clusters_list == clusters_list[seeds_indices[0]]
+    return np.array(entities)[mask].tolist()
+    '''
+    entity2row = {}
+    for (key,value) in row2entity.items():
+        entity2row[value] = key
+    print entity2row['Xavier Sabate']
+    print entity2row['Xavier Adsera']
+    index = entity2row['Xavier Adsera']
+    for i in range(0,len(matrix)):
+       if sim[matrix[index]][i]>0.3:
+           print row2entity[index],row2entity[i],sim[matrix[index]][i]
+    '''
 
 def main():
+
     conn = MongoClient()
     db = conn.catalan_bills
-    #bill2ce = get_bill2comparable(db)
+    bill_id = '00062014'
+    seed_ids = [p['entity_id'] for p in db.politicians_bills.find({'bill':bill_id})]
+    find_relevant_entities(db,bill_id,seed_ids)
+    #print([db.entities.find_one({'_id':e_id}) for e_id in find_relevant_entities(db,bill_id,seed_ids)])
 
-    #print are_comparable_entities('Accion Por El Clima','Actos Juridicos Documentados',bill2ce)
-   
-    #print 'Bill 2 corpus' 
-    #corpus = ent_bill2corpus()
-
-    print 'Keyword 2 corpus' 
-    (corpus,col2word,row2entity) = ent_keyword2corpus()
-    print corpus[0:10]
-    #print 'Document 2 corpus' 
-    #corpus = ent_doc2corpus()
-    print len(corpus)
-    lsi = LsiModel(corpus=corpus,id2word=col2word, num_topics=40)
-    index = similarities.MatrixSimilarity(lsi[corpus])
-    print index[lsi[corpus[0]]][0]
-
-main()
