@@ -27,15 +27,24 @@ def elbow(scores):
 
     return distances.index(max(distances))
         
-def find_cutting_point(scores, epsilon = 0.0005,window_size = 10):
+def find_cutting_point(scores):
     return elbow(scores)
 
-def generate_graph(db,bill_id,metric = 'bill_articles_sentence_cosine_similarity_keywords'):
+'''
+Para cada ley, determinar entidades relevantes para cada entidad y 
+añadir una arista en el grafo entre dos entidades e1 y e2 
+si e1 esta en la lista de entidades relevantes de e2 
+y si e2 esta en la lista de entidades relevantes de e1.
+
+'''
+def generate_graph(db,bill_id,metric = 'bill_articles_sentence_cosine_similarity_keywords', threshold = 0.20):
     relevant_entities = {}
     k=0
     rel_entities_bill = db.bills.find_one({'id':bill_id})['relevant_entities']
     
     for e1 in rel_entities_bill :
+
+	# Obtener la informacion de e1.
 
         e_b = db.entities_bills.find_one({'bill':bill_id,'entity':e1})
         k+=1 
@@ -43,11 +52,15 @@ def generate_graph(db,bill_id,metric = 'bill_articles_sentence_cosine_similarity
         relevant_entities[e_b['name']] = []
         j=0
         for e2 in rel_entities_bill:
+
+	    # Obtener la informacion de e2.
             if e1 == e2:
                 continue
             j+=1
             if j%100 == 0:
                 print j
+
+            # Obtener el objeto de la interrelación.
             e_e = db.entity_entity.find_one({'$or':[{'e1_id':e2,'e2_id':e1},{'e1_id':e1,'e2_id':e2}],metric:{'$exists': True},'bill_id':bill_id})
 
             if e_e is None:
@@ -55,25 +68,30 @@ def generate_graph(db,bill_id,metric = 'bill_articles_sentence_cosine_similarity
                 values.append((0,e_b2['name']))
                 #print ' '+e_b2['name']
                 continue
+
+            # Guardar el valor de la métrica si es mayor que un threshold, ya que esto de mejores resultados empiricamente.
             if e_e['e1_name'] == e_b['name']:
                 if e_e[metric] > 0.05:
                     values.append((e_e[metric],e_e['e2_name'])) 
             else:
                 if e_e[metric] > 0.05:
                     values.append((e_e[metric],e_e['e1_name'])) 
+        # Encontrar el codo.
         if len(values)==0:
             continue
         values.sort(reverse=True)
 
         cut_point = find_cutting_point([v[0] for v in values])
         for i in range(0,cut_point+1):
-            if values[i][0]>0.2:
+	    # Si el valor esta a la izquierda del codo y es mayor que un threshold minimo, considerar la entidad como relevante.
+            if values[i][0]>threshold:
                 relevant_entities[e_b['name']].append(values[i][1])
 
     links = {}
     for entity in db.entities_bills.find({'bill':bill_id,'bill_articles_ids':{'$exists':True}},timeout=False): 
         links[entity['name']] = []
 
+    # Evaluar las relaciones recíprocas.
     for e1 in relevant_entities.keys() :
         for e2 in relevant_entities[e1]:
             if e2 in relevant_entities and e1 in relevant_entities[e2] and e1<e2:
@@ -86,9 +104,8 @@ def generate_graph(db,bill_id,metric = 'bill_articles_sentence_cosine_similarity
 
 def main():
     db = MongoClient().catalan_bills
-    bill_ids = ['00062014','00152014','00202014','00102014']
-    bill_id = bill_ids[1]
-
-    generate_graph(db,bill_id)
+    bill_ids =[bill['id'] for bill in db.bills.find()] 
+    for bill_id in bill_ids:
+        generate_graph(db,bill_id)
 
 main()

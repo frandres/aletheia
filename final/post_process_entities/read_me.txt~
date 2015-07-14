@@ -20,6 +20,6 @@ post_process_entities tiene las siguientes dependencias:
 
 + entities_functions.py: contiene una unica funcion para unificar entidades que tengan el mismo nombre.
 
-+ metrics: contiene la lógica para calcular medidas de similaridad entre dos entidades. Tiene varias métricas implementadas que se almacenan en la colección entity_entity
++ metrics: continee la lógica para calcular medidas de similaridad entre dos entidades. Tiene varias métricas implementadas que se almacenan en la colección entity_entity
 
 + insert_politicians.py (SEMI-AUTOMATICO) es un script que tiene que ser invocado para cada ley que se analice con el objetivo de insertar en la base de datos los politicos que participaron en la redacción de la ley. Idealmente esta información se puede obtener de forma automatizada de los datos del parlament; por restricciones de tiempo no implementé esta función y en su lugar inserte los políticos para cada ley que analice manualmente. Esta lista de políticos es importante para la función filter_entities.

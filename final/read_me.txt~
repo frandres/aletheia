@@ -7,4 +7,4 @@ El orden de todo el sistema es:
 1) pre_processing -> pre-processing del diagrama (downloading and indexing bills, modelling topics from bills, downloading an indexing articles).
 2) analyze_bill. (finding news articles related to the bills, finding entities)
 3) post_process_entities. (filtering entities, finding politicians related to a bill)
-4) generate_graph (generating the entity-entity graph).
+4) generate_graph

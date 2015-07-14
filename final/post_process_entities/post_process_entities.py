@@ -332,7 +332,7 @@ def postprocess_entities():
     normalize_locations(db.entities)
     
 
-    bill_ids =[bill['id'] for bill in db.bills.find()] # Esto puede ser paralelizado.
+    bill_ids =[bill['id'] for bill in db.bills.find()]
 
     for bill_id in bill_ids:
         print 'Fetching documents'

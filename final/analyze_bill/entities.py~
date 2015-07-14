@@ -10,7 +10,7 @@ import editdistance
 from pyner import ner
 from mitie import *
 from string import punctuation
-from expand_entities_names import query_name
+from entities2elasticsearch import query_name
 punctuation = punctuation.replace('-','')
 
 parent = os.path.dirname(os.path.realpath(__file__))

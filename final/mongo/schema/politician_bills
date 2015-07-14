@@ -1,0 +1,3 @@
+Contiene para cada ley, politicos relevantes.
+bill: identificador usado por el parlament.
+entity_id' identificador Mongo de la entidad.

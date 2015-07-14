@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 import louvain
 from igraph import *
 
+'''
+Given a list of vectors of keywords ([(kw, tfidf)], sorted by kw)
+Calculate the cosine similarity with the tf-idf value.
+'''
 def cosine_similarity_keywords(e1ks,e2ks):    
 
     e1_i = 0
@@ -53,6 +57,9 @@ def cosine_similarity_keywords(e1ks,e2ks):
         product = product/(norm_e1*norm_e2)   
     return product
     
+'''
+Given 2 ordered lists, calculate the size of the intersection.
+'''
 def intersection(l1,l2):
     count = 0
     i1 = 0
@@ -85,6 +92,14 @@ def intersection(l1,l2):
                 i2+=1
     return count
 
+'''
+Given 2 entities e1, e2 and an entity_entity object containing their relationship, compute the following metrics:
+
+Mutual information based on document co-occurrence
+Dice based on document co-occurrence
+Jaccard based on document co-occurrence.
+Cosine similarity based on keywords. <- THE ONE WE ACTUALLY USE!.
+'''
 def calculate_metrics_ee_bill(e1,e2,e_e):
 
     if 'bill_articles_ids' not in e1 or 'bill_articles_ids' not in e2:
@@ -112,7 +127,9 @@ def calculate_metrics_ee_bill(e1,e2,e_e):
     return metrics
 
 
-
+'''
+Compute the similarity metrics for all pairs of relevant (filtered) entities related to a bill.
+'''
 def calculate_metrics(db,bill_id):
 
     i = 0
@@ -142,8 +159,9 @@ def calculate_metrics(db,bill_id):
             if e2 is None or e1['name'] == e2['name']:
                 continue
             print j
-
+            # Attempt to find an entity_entity object corresponding to the two relationships.
             e_e = db.entity_entity.find_one({'$or':[{'e1_id':e1['entity'],'e2_id':e2['entity']},{'e2_id':e1['entity'],'e1_id':e2['entity']}]})
+            # If the e_e object corresponding to the relationship does not exist, create it.
             if e_e is None:
                 e_e = {}
 
@@ -158,13 +176,8 @@ def calculate_metrics(db,bill_id):
                     e_e['e1_id'] = e1['entity']
                     e_e['e2_id'] = e2['entity']
                 e_e['bill_id'] = bill_id
-            '''
-            if 'bill_metrics' not in e_e:
-                e_e['bill_metrics'] = {}
-            if 'bill_id' not in e_e['bill_metrics'] :
-                e_e['bill_metrics'][bill_id] = {}
-            '''
-            metrics = calculate_metrics_ee_bill(e1,e2,e_e)
+            # Compute and store the metric.
+            metrics = calculate_metrics_ee_bill(e1,e2,ee)
             if metrics is None:
                 print e1
                 print e2

@@ -9,6 +9,6 @@ search_articles.py tiene las siguientes dependencias:
 
 + entities.py: contiene la lógica para extraer entidades de un articulo (get_entities). Utiliza MITIE como punto de partida y además implementa las 4 funciones de la página 14 de la presentación para mejorar la calidad de los nombres. Depende de :
 
-    - expand_entities_names: Contiene la lógica para la 4 función de la página 14 (Expanding names based on the news corpus)
+    - entities2elasticsearch: Contiene la lógica para la 4 función de la página 14 (Expanding names based on the news corpus)
 
 + entities_functions.py: contiene una unica funcion para unificar entidades que tengan el mismo nombre.

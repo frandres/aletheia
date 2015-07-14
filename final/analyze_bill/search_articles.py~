@@ -132,23 +132,11 @@ def relate_entities_bills(entities,collection,bill_id):
         bill_entity['bill'] = bill_id
         collection.insert(bill_entity)
 
-def relate_entities_documents(entities,collection,bill_id):
-    for entity in entities:
-        for article in entity['articles']:
-            collection.insert({'entity': entity['mongoid'], 'article': article,'bill_id':bill_id})
-
 def main():
     conn = MongoClient()
     db = conn.catalan_bills
 
-    bills = []
-#for bill in db.bills.find():
     for bill in db.bills.find():
-        if int(bill['year'])>=2014:
-            bills.append(bill)
-
-    print ('Processing: {}'.format(len(bills)))
-    for bill in bills:
 
         original_keywords = bill['keywords']
         #print bill['text'][0:1000].encode('utf8')
@@ -181,7 +169,7 @@ def main():
         print bill['id']
         r_articles_ids = [x['_id'] for x in results['hits']['hits']]
         db.bills.update({'id':bill['id']},{'$set':{'bill_articles_ids':r_articles_ids}})
-        continue
+        
         print('Bill: {}'.format(bill['id']))
 
         print(' Found {} relevant articles'.format(num_articles))
@@ -196,10 +184,5 @@ def main():
         print(' Relating entities with bills')
         relate_entities_bills(entities,db.entities_bills,bill['id'])
 
-        print(' Relating entities with documents')
-        relate_entities_documents(entities,db.entities_documents,bill['id'])
-
-        print(' Relating entities with keywords')
-        relate_entities_keywords(entities,db.entities_keywords,document_keywords,bill['id'])
 
 main()

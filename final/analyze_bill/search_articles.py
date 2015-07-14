@@ -20,6 +20,7 @@ return a list of dictionaries containing information about the entities found
 def article2entities(articles,index):
     i = 0
     entities = {}
+    # Limite de articulos de 10000, se puede cambiar.
     for (body,weight,article_id) in articles[0:10000]:
         i+=1
         print ' Article {} out of {}'.format(i,len(articles))
@@ -169,7 +170,7 @@ def main():
         print bill['id']
         r_articles_ids = [x['_id'] for x in results['hits']['hits']]
         db.bills.update({'id':bill['id']},{'$set':{'bill_articles_ids':r_articles_ids}})
-        continue
+        
         print('Bill: {}'.format(bill['id']))
 
         print(' Found {} relevant articles'.format(num_articles))
