@@ -1,0 +1,74 @@
+curl -XDELETE 127.0.0.1:9200/catnews_spanish_paragraphs 
+curl -XPUT 127.0.0.1:9200/catnews_spanish_paragraphs -d '{
+   "settings":{
+      "index":{
+         "analysis":{
+            "analyzer":{
+               "analyzer_shingle":{
+                  "tokenizer":"standard",
+                  "filter":["standard", "lowercase", "filter_stop", "spa_stemmer","filter_shingle","remove_doublespaces"],
+              "norms": { "enabled": false }
+               },
+               "analyzer_keywords":{
+                  "tokenizer":"keyword",
+                  "filter":["standard", "lowercase", "filter_stop"],
+              "norms": { "enabled": false }
+               },
+               "analyzer_keywords2" :{
+                  "tokenizer":"keyword", 
+                  "filter":["standard", "lowercase"],
+                  "norms": { "enabled": false }
+               }
+            },
+            "filter":{
+        "spa_stemmer" : {
+                    "type" : "stemmer",
+                    "name" : "spanish"
+                },
+               "filter_shingle":{
+                  "type":"shingle",
+                  "max_shingle_size":3,
+                  "min_shingle_size":2,
+                  "output_unigrams":"true",
+          "filler_token":""
+               },
+               "filter_stop":{
+                 "type":"stop",
+                  "stopwords": ["de","la","que","el","en","y","a","los","del","se","las","por","un","para","con","no","una","su","al","lo","como","mas","pero","sus","le","ya","o","este","si","porque","esta","entre","cuando","muy","sin","sobre","tambien","me","hasta","hay","donde","quien","desde","todo","nos","durante","todos","uno","les","ni","contra","otros","ese","eso","ante","ellos","e","esto","mi","antes","algunos","que","unos","yo","otro","otras","otra","el","tanto","esa","estos","mucho","quienes","nada","muchos","cual","poco","ella","estar","estas","algunas","algo","nosotros","mi","mis","tu","te","ti","tu","tus","ellas","nosotras","vosostros","vosostras","os","mio","mia","mios","mias","tuyo","tuya","tuyos","tuyas","suyo","suya","suyos","suyas","nuestro","nuestra","nuestros","nuestras","vuestro","vuestra","vuestros","vuestras","esos","esas","estoy","estas","esta","estamos","estais","estan","este","estes","estemos","esteis","esten","estare","estaras","estara","estaremos","estareis","estaran","estaria","estarias","estariamos","estariais","estarian","estaba","estabas","estabamos","estabais","estaban","estuve","estuviste","estuvo","estuvimos","estuvisteis","estuvieron","estuviera","estuvieras","estuvieramos","estuvierais","estuvieran","estuviese","estuvieses","estuviesemos","estuvieseis","estuviesen","estando","estado","estada","estados","estadas","estad","he","has","ha","hemos","habeis","han","haya","hayas","hayamos","hayais","hayan","habre","habras","habra","habremos","habreis","habran","habria","habrias","habriamos","habriais","habrian","habia","habias","habiamos","habiais","habian","hube","hubiste","hubo","hubimos","hubisteis","hubieron","hubiera","hubieras","hubieramos","hubierais","hubieran","hubiese","hubieses","hubiesemos","hubieseis","hubiesen","habiendo","habido","habida","habidos","habidas","soy","eres","es","somos","sois","son","sea","seas","seamos","seais","sean","sere","seras","sera","seremos","sereis","seran","seria","serias","seriamos","seriais","serian","era","eras","eramos","erais","eran","fui","fuiste","fue","fuimos","fuisteis","fueron","fuera","fueras","fueramos","fuerais","fueran","fuese","fueses","fuesemos","fueseis","fuesen","sintiendo","sentido","sentida","sentidos","sentidas","siente","sentid","tengo","tienes","tiene","tenemos","teneis","tienen","tenga","tengas","tengamos","tengais","tengan","tendre","tendras","tendra","tendremos","tendreis","tendran","tendria","tendrias","tendriamos","tendriais","tendrian","tenia","tenias","teniamos","teniais","tenian","tuve","tuviste","tuvo","tuvimos","tuvisteis","tuvieron","tuviera","tuvieras","tuvieramos","tuvierais","tuvieran","tuviese","tuvieses","tuviesemos","tuvieseis","tuviesen","teniendo","tenido","tenida","tenidos","tenidas","tened"]
+               },
+               "remove_underscores" : {
+                  "type":"length",
+                  "min":"1",
+                  "max":"1000"
+               },
+               "remove_doublespaces" : {
+                  "type":"pattern_replace",
+                  "pattern":"(\\w)  (\\w)",
+                  "replacement":"$1 $2"
+               },
+               "remove_doublespaces2" : {
+                  "type":"pattern_replace",
+                  "pattern":"\\s+",
+                  "replacement":" "
+               }
+            }
+         }
+      }
+   },
+   "mappings":{
+      "news_article_paragraph":{
+         "properties":{
+            "body":{
+               "index_analyzer":"analyzer_shingle",
+               "type":"string",
+           "norms": { "enabled": false }
+            },
+            "title":{
+               "index_analyzer":"analyzer_shingle",
+               "type":"string",
+           "norms": { "enabled": false }
+            }
+         }
+      }
+   }
+}'

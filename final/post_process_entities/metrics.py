@@ -1,0 +1,177 @@
+import sys
+from pymongo import MongoClient
+import os
+from math import log,sqrt
+import matplotlib.pyplot as plt
+import louvain
+from igraph import *
+
+def cosine_similarity_keywords(e1ks,e2ks):    
+
+    e1_i = 0
+    e2_i = 0
+
+    product = 0
+    norm_e1 = 0
+    norm_e2 = 0
+
+    e1k = ('',0)
+    e2k = ('',0)
+    while e1_i < (len(e1ks)) or (e2_i<len(e2ks)):
+        
+        if e1_i < len(e1ks):
+            e1k = e1ks[e1_i]
+            
+        if e2_i < len(e2ks):
+            e2k = e2ks[e2_i]
+
+        if e1k[0] == e2k[0]:
+            product+= float(e1k[1]) * e2k[1]
+
+            if e1_i< len(e1ks):
+                norm_e1 += float(e1k[1]) * e1k[1]
+                e1_i+=1
+
+            if e2_i< len(e2ks):
+                norm_e2 += float(e2k[1]) * e2k[1]
+                e2_i+=1
+
+        if e1k[0] < e2k[0] or e2_i == len(e2ks):
+            if e1_i< len(e1ks):
+                norm_e1 += float(e1k[1]) * e1k[1]
+                e1_i+=1
+        if e1k[0] > e2k[0] or e1_i == len(e1ks):
+            if e2_i< len(e2ks):
+                norm_e2 += float(e2k[1]) * e2k[1]
+                e2_i+=1
+
+
+    norm_e1 = sqrt(norm_e1)            
+    norm_e2 = sqrt(norm_e2)            
+
+    if product >0:
+        product = product/(norm_e1*norm_e2)   
+    return product
+    
+def intersection(l1,l2):
+    count = 0
+    i1 = 0
+    i2 = 0
+    if len(l1) == 0 or len(l2) == 0:
+        return 0
+    while i1<len(l1) or i2<len(l2):
+
+            
+        if i1 < len(l1):
+            w1 = l1[i1]
+            
+        if i2 < len(l2):
+            w2 = l2[i2]
+
+        if w1 == w2:
+            count+=1
+
+            if i1<len(l1):
+                i1+=1
+            if i2<len(l2):
+                i2+=1
+
+        if w1 < w2 or i2 == len(l2):
+            if i1<len(l1):
+                i1+=1
+
+        if w2 < w1 or i1 == len(l1):
+            if i2<len(l2):
+                i2+=1
+    return count
+
+def calculate_metrics_ee_bill(e1,e2,e_e):
+
+    if 'bill_articles_ids' not in e1 or 'bill_articles_ids' not in e2:
+        raise Exception('No docs for {} or {}'.format(e1['name'], e2['name']))
+    e1_count = len(e1['bill_articles_ids'])
+    e2_count = len(e2['bill_articles_ids'])
+    intersection_count = float(intersection(e1['bill_articles_ids'],e2['bill_articles_ids']))
+
+    metrics = {}
+    metrics['bill_articles_co-occurence_mutual_information'] = log((intersection_count+1)/(e1_count*e2_count+1))
+    metrics['bill_articles_co-occurence_dice'] = (2*(intersection_count))/(e1_count+e2_count+1)
+    metrics['bill_articles_co-occurence_jaccard'] = ((intersection_count)/(e1_count+e2_count-intersection_count+1))
+    # Cosine similarity
+    if 'entity_keywords'not in e1 or 'entity_keywords' not in e2:
+        #print ('No kws for {} or {}'.format(e1['name'], e2['name']))
+        return None
+
+    e1ks = e1['entity_keywords'].items() 
+    e1ks.sort()
+     
+    e2ks = e2['entity_keywords'].items()
+    e2ks.sort()
+
+    metrics['bill_articles_sentence_cosine_similarity_keywords'] = cosine_similarity_keywords(e1ks,e2ks)   
+    return metrics
+
+
+
+def calculate_metrics(db,bill_id):
+
+    i = 0
+
+    rel_entities_bill = db.bills.find_one({'id':bill_id})['relevant_entities']
+    for e1 in rel_entities_bill :
+        e1 = db.entities_bills.find_one({'bill':bill_id,'entity':e1})
+        if e1 is None:
+
+            print 'None'
+            continue
+        if 'bill_articles_ids' not in e1:
+            
+            print 'No documents'
+            continue
+        i+=1
+        print i, e1['name']
+        j=0
+        for e2 in rel_entities_bill :
+            if e1 == e2:
+                continue
+            e2 = db.entities_bills.find_one({'bill':bill_id,'entity':e2})
+            if e2 is None or 'bill_articles_ids' not in e2:
+                print 'No documents'
+                continue
+            j+=1
+            if e2 is None or e1['name'] == e2['name']:
+                continue
+            print j
+
+            e_e = db.entity_entity.find_one({'$or':[{'e1_id':e1['entity'],'e2_id':e2['entity']},{'e2_id':e1['entity'],'e1_id':e2['entity']}]})
+            if e_e is None:
+                e_e = {}
+
+                if e1['name'] > e2['name']:
+                    e_e['e1_name'] = e2['name']
+                    e_e['e2_name'] = e1['name']
+                    e_e['e1_id'] = e2['entity']
+                    e_e['e2_id'] = e1['entity']
+                else:
+                    e_e['e1_name'] = e1['name']
+                    e_e['e2_name'] = e2['name']
+                    e_e['e1_id'] = e1['entity']
+                    e_e['e2_id'] = e2['entity']
+                e_e['bill_id'] = bill_id
+            '''
+            if 'bill_metrics' not in e_e:
+                e_e['bill_metrics'] = {}
+            if 'bill_id' not in e_e['bill_metrics'] :
+                e_e['bill_metrics'][bill_id] = {}
+            '''
+            metrics = calculate_metrics_ee_bill(e1,e2,e_e)
+            if metrics is None:
+                print e1
+                print e2
+                print e_e
+                print 'continuing'
+                continue
+            for (metric,value) in metrics.items():
+                e_e[metric] = value
+            db.entity_entity.update({'$or':[{'e1_id':e1['entity'],'e2_id':e2['entity']},{'e2_id':e1['entity'],'e1_id':e2['entity']}]},e_e,upsert=True)
+

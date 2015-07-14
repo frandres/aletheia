@@ -1,0 +1,8 @@
+Dada una ley, contiene la información sobre la interrelación de dos entidades:
+
+e1_id y e1_name tienen el id de Mongo y el nombre de la primera entidad (en orden alfabetico)
+e2_id y e2_name tienen el id de Mongo y el nombre de la segunda entidad.
+
+bill_id: el identificador de la ley usado por el parlament.
+
+Ademas contiene todas las metricas de similitud de dos entidades que se calculan.

@@ -1,0 +1,97 @@
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+
+from nltk.stem import SnowballStemmer
+from collections import defaultdict
+from elasticsearch import Elasticsearch
+from pymongo import MongoClient
+from math import sqrt,log
+import re
+
+stopwords = ["de","la","que","el","en","y","a","los","del","se","las","por","un","par","con","no","una","su","al","lo","com","mas","per","sus","le","ya","o","este","si","porqu","esta","entre","cuand","muy","sin","sobr","tambi","me","hast","hay","dond","qui","desd","tod","nos","durant","tod","uno","les","ni","contr","otros","ese","eso","ante","ellos","e","esto","mi","antes","algun","que","unos","yo","otro","otras","otra","el","tant","esa","estos","much","quien","nad","much","cual","poc","ella","estar","estas","algun","algo","nosotr","mi","mis","tu","te","ti","tu","tus","ellas","nosotr","vosostr","vosostr","os","mio","mia","mios","mias","tuy","tuy","tuy","tuy","suy","suy","suy","suy","nuestr","nuestr","nuestr","nuestr","vuestr","vuestr","vuestr","vuestr","esos","esas","estoy","estas","esta","estam","estais","estan","este","estes","estem","esteis","esten","estar","estar","estar","estar","estareis","estar","estari","estari","estari","estariais","estari","estab","estab","estab","estabais","estab","estuv","estuv","estuv","estuv","estuv","estuv","estuv","estuv","estuvier","estuv","estuv","estuv","estuv","estuvies","estuv","estuv","estand","estad","estad","estad","estad","estad","he","has","ha","hem","habeis","han","hay","hay","hay","hayais","hay","habr","habr","habr","habr","habreis","habr","habri","habri","habri","habriais","habri","habi","habi","habi","habiais","habi","hub","hub","hub","hub","hub","hub","hub","hub","hubier","hub","hub","hub","hub","hubies","hub","hub","hab","hab","hab","hab","hab","soy","eres","es","som","sois","son","sea","seas","seam","seais","sean","ser","ser","ser","ser","sereis","ser","seri","seri","seri","seriais","seri","era","eras","eram","erais","eran","fui","fuist","fue","fuim","fuisteis","fueron","fuer","fuer","fuer","fuerais","fuer","fues","fues","fues","fueseis","fues","sint","sent","sent","sent","sent","sient","sent","teng","tien","tien","ten","teneis","tien","teng","teng","teng","tengais","teng","tendr","tendr","tendr","tendr","tendreis","tendr","tendri","tendri","tendri","tendriais","tendri","teni","teni","teni","teniais","teni","tuv","tuv","tuv","tuv","tuv","tuv","tuv","tuv","tuvier","tuv","tuv","tuv","tuv","tuvies","tuv","tuv","ten","ten","ten","ten","ten","ten"]
+
+def get_rocchio_keywords(original_keywords, num_articles = 10,max_rocchio_num_articles =100):
+
+    query = {"query":{"bool":{"disable_coord": True,"should": [{'match_phrase':{'body':{'query':x,'boost':y,'analyzer':'analyzer_keywords'}}} for [x,y] in original_keywords[0:1024]]}}}
+    
+    es = Elasticsearch(timeout=30)
+    results = es.search(index="catnews_spanish", body=query,size =100,search_type = 'dfs_query_then_fetch',sort='_score:desc,_id:desc')['hits']['hits']
+
+    score = results[num_articles-1]['_score']
+    while results[num_articles-1]['_score'] == score and num_articles<max_rocchio_num_articles:
+        num_articles+=1
+
+    documents = [x['_source']['body'] for x in results[0:num_articles]]
+
+    rocchio_kws = apply_rocchio(documents,original_keywords,alpha=1,beta=0.5)
+    rocchio_kws.sort(reverse=True)
+   
+    kws = [[x,y] for (y,x) in rocchio_kws]
+
+    return kws
+
+def tokenizer_with_stemming(string):
+    token_pattern=r"(?u)\b\w\w+\b"
+    pattern = re.compile(token_pattern)
+    tokens = pattern.findall(string)
+
+    stemmer = SnowballStemmer('spanish')
+    stemmed_text = [stemmer.stem(i) for i in tokens]
+    return stemmed_text
+
+    #return stemmed_text
+
+def get_idf(word):
+    es = Elasticsearch()
+
+    q = {'query': {'bool': {'disable_coord': True, 'must': [{'match_phrase': {'body': {'analyzer': 'analyzer_keywords', 'query': word}}}]}}}
+
+    count = es.count(index='catnews_spanish',body =q)['count']
+    N = es.count(index='catnews_spanish')['count']
+
+    return log(float(N)/(1+count))
+
+
+def apply_rocchio(documents,keywords,alpha=1,beta=0.5,min_freq=3.0):
+    # This dict will store the new keywords.
+    new_keywords = {}
+
+    # Normalize q
+
+    q_norm = sqrt(sum([y**2 for (x,y) in keywords]))
+
+    for (kw,weight) in keywords:
+        new_keywords[kw] = alpha* weight/q_norm
+
+    # Now analyze the documents
+
+    tfidf_v = CountVectorizer(ngram_range=(1,3),stop_words = stopwords, tokenizer = tokenizer_with_stemming,min_df=float(min_freq)/len(documents))
+
+    t = tfidf_v.fit_transform(documents)
+    features = tfidf_v.get_feature_names()
+
+    matrix = t.todense()
+
+    for i in range(len(documents)):
+        doc_norm = 0
+        doc = {}
+
+        # Compute the norm and the weight of each feature.
+
+        for j in range(len(features)):
+            freq = matrix[i,j]
+            if freq >2:
+
+                idf = get_idf(features[j])
+                tf_idf_w = idf*freq
+                doc_norm+= tf_idf_w**2
+                if tf_idf_w >0:
+                    doc[features[j]] = tf_idf_w
+                
+        doc_norm = sqrt(doc_norm)
+        for (keyword,weight) in doc.items():
+            if keyword in new_keywords:
+                new_keywords[keyword]+= beta*weight/(doc_norm*len(documents))
+            else:
+                new_keywords[keyword]= beta*weight/(doc_norm*len(documents))
+
+    return [(y,x) for (x,y) in new_keywords.items()]

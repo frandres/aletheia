@@ -1,0 +1,8 @@
+bill: identificador de la ley usado por el Parlament.
+
+entity: id de mongo de la entidad.
+
+entity_keywords: diccionario que contiene los keywords que modelan a la entidad para la ley en particular. Generado en post_process_entities.
+
+bill_articles_ids: lista de articulos relacionados con la ley en los que aparece la entidad.
+

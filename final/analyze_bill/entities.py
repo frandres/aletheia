@@ -1,0 +1,345 @@
+import sys, os
+parent = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(parent + '/MITIE/mitielib')
+
+from nltk.corpus import stopwords
+spanish_stopwords = stopwords.words('spanish')
+
+from collections import defaultdict
+import editdistance
+from pyner import ner
+from mitie import *
+from string import punctuation
+from entities2elasticsearch import query_name
+punctuation = punctuation.replace('-','')
+
+parent = os.path.dirname(os.path.realpath(__file__))
+ner = named_entity_extractor(parent+'/MITIE/MITIE-models/spanish/ner_model.dat')
+
+def get_entities_mit(body,index):
+    body = body.encode('utf-8')
+    tokens = tokenize(body)
+    entities = []
+    for x in ner.extract_entities(tokens):
+        entity = {}
+        entity['name'] = " ".join(tokens[i] for i in x[0])
+        entity['tag'] = x[1]
+        entity['token_initial_index'] = x[0][0]
+        length = len(entity['name'].split(' '))
+        entity['token_final_index'] = x[0][0]+length
+        entity['freq'] = 1
+        entity['aliases'] = []
+        entities.append(entity)
+
+    entities = normalize_entities(entities)
+    entities = merge_initials(entities,tokens)
+    entities = merge_names(entities)
+    entities = complete_names(entities, tokens,index)
+    entities_dict = {}
+    
+    # Build the dictionary.
+    for entity in entities:
+        if entity['name'] == '':
+            continue
+        
+        if entity['name'] not in entity['aliases']:
+            entity['aliases'].append(entity['name'])
+
+        name = entity['name']
+        if name not in entities_dict:
+            entity['tags'] = {entity['tag']:entity['freq']}
+            entity.pop('tag')
+            entity.pop('token_initial_index')
+            entity.pop('token_final_index')
+            entities_dict[name] = entity
+
+        else:
+            entities_dict[name]['freq']+=entity['freq']
+
+            # Merge aliases:
+            for alias in entity['aliases']:
+                if alias not in entities_dict[name]['aliases']:
+                    entities_dict[name]['aliases'].append(alias)
+
+            # Merge tag counts.
+            if entity['tag'] in entities_dict[name]['tags']:
+                entities_dict[name]['tags'][entity['tag']]+=entity['freq']
+            else:
+                entities_dict[name]['tags'][entity['tag']]=entity['freq']
+            
+    return entities_dict
+
+def complete_names(entities,tokens,index,window_size = 15):
+    new_entities = []
+    for i in range(0,len(entities)):
+        entity = entities[i]
+        if entity['tag'] in ['PERSON','LOCATION']:
+            new_entities.append(entity)
+            continue
+
+        initial_pos = max(0,entity['token_initial_index']-3)
+        [tokens[k] for k in range(initial_pos,entity['token_initial_index']) if tokens[k].istitle()]
+
+        final_pos = min(len(tokens),entity['token_initial_index']+3)
+        if len([tokens[k] for k in range(initial_pos,entity['token_initial_index']) if tokens[k].istitle()]) == 0 or len([tokens[k] for k in range(entity['token_final_index'],final_pos)if tokens[k].istitle()]) == 0:
+            continue
+
+        initial_pos = max(0,entity['token_initial_index']-window_size)
+        final_pos = min(len(tokens),entity['token_initial_index']+window_size)
+        name_with_context = [tokens[k] for k in range(initial_pos,final_pos)]
+        pre_context = ' '.join([tokens[k] for k in range(initial_pos,entity['token_initial_index'])])
+        post_context = ' '.join([tokens[k] for k in range(entity['token_final_index'],final_pos)])
+     
+        whole_name = query_name(pre_context,entity['name'],post_context,index)
+        if whole_name is not None:
+            #print 'EXPANDING {} to {} based on {}'.format(entity['name'],whole_name, ' '.join(name_with_context))
+            entity['name'] = whole_name
+            whole_name_words = whole_name.split(' ')
+            # Merge it with neighboring entities.
+            limit = min([i-k for k in range(0,4) if i-k>=0])
+            for j in range(limit,i):
+                # Check if it's close enough
+                #print i, j,len(entities)
+                if entities[i]['token_initial_index']-entities[j]['token_final_index'] > window_size:
+                    continue
+                # Check if the neighboring entity is contained in the complete name
+                not_contained = False
+                for word in entities[j]['name'].split(' '):
+                    if word not in whole_name_words:
+                        not_contained = True
+                        break
+                if not_contained:
+                    break
+                # If it's close enough and it's contained in the complete name, delete it
+                #print 'REMOVING {} based on {} and {}'.format(entities[j]['name'],entity['name'], ' '.join(name_with_context))
+                if entities[j] in new_entities:
+                    new_entities.remove(entities[j])
+        new_entities.append(entity)
+
+    return new_entities
+
+'''
+    Given a list of entities, attempts to match partial names (1 word)
+    with the nearest previous complete name (2 words or more) in the article.
+    For instance, if the entity Robert Patrick is found, followed by the entity Patrick, we can infer
+    that these names relate to the same entity.
+    
+    When such a match is found, the entities are merged and the partial name is added as an alias.
+
+    This process is done only on entities of the type 'PERSON'
+'''
+def merge_names(entities):
+    full_persons = []
+    new_entities = []
+    
+    # Make sure that the entities are sorted according to the order they are mentioned in the article.
+    sorted_entities = [(entity['token_initial_index'],entity) for entity in entities]
+    sorted_entities.sort()
+    entities = [entity for (pos, entity) in sorted_entities]
+
+    for entity in entities:
+        if entity['tag'] == 'PERSON':
+            tokens = entity['name'].split(' ')
+            if len(tokens)>1: # It's a full name.
+                full_persons.append(entity)
+                new_entities.append(entity)
+            else: # It's a partial name (first name or last name)
+                found_whole_name = False
+                # Attempt to match it to nearest previous entity
+                for i in range(len(full_persons)-1,-1,-1):
+                    full_person = full_persons[i]
+
+                    '''
+                    We need to match the lowercase of names since the camelize function 
+                    does not change strings of one word
+                    '''
+                    
+                    all_names = [x.lower() for x in full_person['name'].split()]
+                    if entity['name'].lower() in all_names:
+                        found_whole_name= True
+                        full_person['freq']+=entity['freq']
+                        if entity['name'] not in full_person['aliases']:
+                            #print('ALIASES: {} FOUND: {}'.format(entity['name'],full_person['name']))
+                            full_person['aliases'].append(entity['name'])
+                            break
+                        else:
+                            pass
+                            #print('ALIASES: {} FOUND: {} already there'.format(entity['name'],full_person['name']))
+                if not found_whole_name:
+                    new_entities.append(entity)
+                    #print('ALIASES: {} NOT FOUND'.format(entity['name']))
+
+                    
+        else: # ORG, LOC or MISC
+            new_entities.append(entity)
+
+    return new_entities
+'''
+    Given a list of entities, attempt to match organizations names with their initials.
+    To do so, the following pattern is exploited:
+
+    Usually in articles after an organization's full name is first used, the writer writes the initials
+    of that organization inside parenthesis. EG: Hewlett Packard (HP). 
+
+    This function goes through the list of entities and attempts to exploit that pattern; in case a match
+    is found the entities are merged and the initials are added as an alias.
+'''
+def merge_initials (entities,tokens):
+    new_entities = []
+    full_organizations = []
+    
+     
+    # Make sure that the entities are sorted according to the order they are mentioned in the article.
+    sorted_entities = [(entity['token_initial_index'],entity) for entity in entities]
+    sorted_entities.sort()
+    entities = [entity for (pos, entity) in sorted_entities]
+    for entity in entities:
+        if entity['tag'] in ['ORGANIZATION','MISC']:
+            found = False
+            ''' 
+            Verify if it's been found before. If so, update the frequency count and discard it.
+
+            Otherwise, verify if we can match it to another organization.
+            '''
+            for full_organization in full_organizations:
+                if entity['name'] in full_organization['aliases'] or entity['name'] == full_organization['name']:
+                   full_organization['freq'] += entity['freq']
+                   found = True
+                   break
+            if found:
+                continue
+            # Verify the name can be an alias according to the <(INITIALS)> pattern.
+
+            if entity['name'].isupper() and tokens[entity['token_initial_index']-1]=='(' and tokens[entity['token_final_index']]==')' and len(full_organizations)>0:
+
+                # Check the previous organization and the distance to it.
+
+                previous_organization = full_organizations[len(full_organizations)-1] 
+                if entity['token_initial_index'] - previous_organization['token_final_index'] <3:
+                    # It's match for sure.
+                    previous_organization['aliases'].append(entity['name'])
+                    previous_organization['freq'] += entity['freq']
+                    #print 'INITIALS: {} matched with {}'.format(entity['name'],previous_organization['name'])
+                    continue
+                # If it doesn't match, then add id as an entity and add it to the list of organizations.
+
+                full_organizations.append(entity)
+                new_entities.append(entity)
+            else: # It's a normal organization
+                full_organizations.append(entity)
+                new_entities.append(entity)
+        else:
+            new_entities.append(entity)
+
+    return new_entities
+'''
+    Given a string, return it's camelized version (meaning every letter of every word is in lowercase,
+    except for the first word which is in uppercase).
+    If the string only contains one word, or if the word is completely in uppercase, it is not modified.
+'''
+def camelize(string):
+    if string.isupper() or len(string.split(' '))==0:
+        return string
+
+    to_upper_case = True
+    new_string = ''
+    for x in string:
+        if to_upper_case:
+            new_string+=x.upper()
+        else:
+            new_string+=x.lower()
+
+        to_upper_case = x == ' '
+    return new_string
+
+'''
+    Given a string, remove trailing and leading uncapitalized stopwords.
+'''
+def remove_trailing_stopwords(string):
+
+    words = string.split(' ')
+    wordsd = []
+    found_upper = False
+
+     # Remove trailing stopwords
+
+    found_non_stopword = False
+    for i in range(len(words)):
+        word = words[i]
+        if len(word)==0:
+            continue
+        found_non_stopword = found_non_stopword or word not in spanish_stopwords
+        if found_non_stopword:
+            wordsd.append(word)
+
+    words = [x for x in wordsd]
+
+    wordsd = []
+    found_non_stopword = False
+    for i in range(len(words)-1,-1,-1):
+        word = words[i]
+        if len(word)==0:
+            continue
+        found_non_stopword = found_non_stopword or word not in spanish_stopwords
+        if found_non_stopword:
+            wordsd = [word]+wordsd
+
+    return ' '.join(wordsd)
+
+'''
+Given a string with the name of an entity, normalize it by doing the following steps:
+0) Remove names which do not have at least one uppercase letter.
+1) Punctuation sign removal.
+2) Remove double, leading and trailing whitespaces.
+3) Remove leading and trailing stopwords.
+4) Camelize the string.
+'''
+def normalize_text(text):
+
+    # Remove names which are completely undercase.
+    if text.islower():
+        return ''
+    # Clean punctuation
+
+    text = text.replace('.','')
+    for punct in punctuation:
+        text = text.replace(punct, ' ')
+
+    # Remove double whitespces
+    text = text.replace('   ',' ')
+    text = text.replace('  ',' ')
+    # And remove trailing spaces
+    text = text.strip()
+    # Filter trailing stopwords.
+    text = remove_trailing_stopwords(text)
+
+    # Camelize.
+    text = camelize(text)
+
+    return text
+            
+def normalize_entities(entities):
+    for ent in entities:
+        ent['name'] = normalize_text(ent['name'])
+
+    return entities
+        
+def get_entities(body,index):
+    return get_entities_mit(body,index)
+
+def get_entities_standford(body):
+    tagger = ner.SocketNER(host='localhost', port=9192)
+    results = tagger.get_entities(body)
+    entities = {}
+    
+    for ent_type in ['ORG','PERS','OTROS']:
+        if ent_type in results:
+            for entity in results[ent_type]:
+                if entity in entities:
+                    entities[entity]+=1
+                else:
+                    entities[entity]=1
+    return entities
+
+
+

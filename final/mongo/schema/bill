@@ -1,0 +1,11 @@
+title: titulo, generado en pre_processing/bills_text2mongo
+text: contenido de la ley, generado en pre_processing/bills_text2mongo
+rocchio_keywords: keywords extraidos utilizando Rocchio's rule a partir de las palabras claves que se encuentran en los articulos de prensa.
+relevant_entities: ids de las entidades relevantes, generado en post_process_entities.
+year: año de escritura de la ley, generado en pre_processing/bills_text2mongo
+keywords: keywords de la ley, generado en pre_processing/bills_text2mongo
+bill_articles_ids: ids de los articulos de prensa, generado en search_articles
+_id
+id: el identificador del parlament de cada ley.
+
+

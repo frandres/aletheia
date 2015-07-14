@@ -1,0 +1,19 @@
+col = db.entities
+col.createIndex({name:1})
+col.createIndex({_id:1})
+
+col = db.entities_bills
+col.createIndex({name:1})
+col.createIndex({bill_id:1})
+
+col = db.entities_keywords
+col.createIndex({entity:1})
+
+col = db.entities_documents
+col.createIndex({entity:1})
+
+db.entity_entity.createIndex({'e1_id':1,'e2_id':1})
+
+db.entities_bills.createIndex({'entity':1,'bill':1})
+db.entity_bills.createIndex({'bill':1,'bill_articles_ids':1})
+
